@@ -4,6 +4,24 @@ This repository contains Terraform files to automate the creation of a lab envir
 
 To make it work for you, you will need to change the ssh keys used in the `main.tf` file.
 
+## Using Terraform
+
+Terraform can be split into 3 different commands.
+
+- `terraform init`: load provider modules
+- `terraform plan`: plan the deploy, check syntax, etc
+- `terraform apply`: deploy
+
+### Resources
+- https://www.terraform.io/intro/index.html
+- https://www.terraform.io/docs/providers/aws/index.html
+
+## Set-Up
+
+You'll need to create your own AWS account and get API access tokens. Store those tokens in your `~/.aws/credentials` file and Terraform will automatically detect and use them. You will also need to subscribe to the Kali Linux AMI in the AWS Marketplace (free of charge).
+
+- https://www.terraform.io/intro/index.html
+
 ## TO DO:
 
 - Add in VPN capabilities to the VPC
