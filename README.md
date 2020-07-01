@@ -22,12 +22,20 @@ You'll need to create your own AWS account and get API access tokens. Store thos
 
 - https://www.terraform.io/intro/index.html
 
+I did my best to stay within AWS's free tier requirements. Based on my experience it is free of charge, but don't take my word for it. Set up billing alerts, learn about free tier limits, and save yourself from an unpleasant bill.
+
 ## TO DO:
 
 - Add in VPN capabilities to the VPC
+  - Add in PiVPN installation automation
+  - Add in PiVPN VPN profile creation and distribution automation
+  - Allow Kali ssh server password logins
+- Automate the creation of Kali profiles when a VPN profile is created
+  - With appropriate shell, homedir, etc
 - Allow traffic to Kali only from VPN
 - Add in pwnable machines in the cloud
 - Add in beginner CTFd platform to mess around with
+  - Using a separate cloud in DigitalOcean
 
 ## References
 
