@@ -48,6 +48,14 @@ resource "aws_security_group" "vpn_group" {
     cidr_blocks = [var.access_addr]
   }
 
+  # Allow traffic from the VPC
+  ingress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.0.0.0/16"]
+  }  
+
   egress {
     from_port   = 0
     to_port     = 0
