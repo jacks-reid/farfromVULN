@@ -26,16 +26,18 @@ I did my best to stay within AWS's free tier requirements. Based on my experienc
 
 ## TO DO:
 
-- Add in VPN capabilities to the VPC
+- ~~Add in VPN capabilities to the VPC~~
   - Add in PiVPN installation automation
   - Add in PiVPN VPN profile creation and distribution automation
   - Allow Kali ssh server password logins
 - Automate the creation of Kali profiles when a VPN profile is created
   - With appropriate shell, homedir, etc
 - Allow traffic to Kali only from VPN
-- Add in pwnable machines in the cloud
+- ~~Add in pwnable machines in the cloud~~
+  - Configure appropriate level of traffic outwards from vulnerable machines
+  - Automate the Vulnhub image AMI upload process
 - Add in beginner CTFd platform to mess around with
-  - Using a separate cloud in DigitalOcean
+  - Using a separate cloud in DigitalOcean?
 
 ## References
 
@@ -43,3 +45,4 @@ Resources used extensively in this project:
 
 - https://github.com/3ndG4me/Offensive-Security-Engineering-Udemy
 - https://medium.com/@mitesh_shamra/manage-aws-vpc-with-terraform-d477d0b5c9c5
+- https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf

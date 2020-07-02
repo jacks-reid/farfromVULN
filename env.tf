@@ -75,4 +75,32 @@ resource "aws_security_group" "allow_ssh" {
   }
 }
 
+# Security group allowing all traffic from VPC CIDR range
+resource "aws_security_group" "allow_vuln" {
+  name        = "allow_vuln"
+  description = "allow all traffic"
+  vpc_id      = aws_vpc.main.id
+
+
+  ingress {
+    description = "allow all traffic"
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["10.0.0.0/16"]
+  }
+
+  # Allows any kind of traffic outwards
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "allow_vuln"
+  }
+}
+
 
