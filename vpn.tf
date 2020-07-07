@@ -72,7 +72,29 @@ resource "aws_instance" "primary_vpn" {
   vpc_security_group_ids = [aws_security_group.vpn_group.id]
   key_name        = "primary"
 
+  provisioner "file" {
+    source      = "unattended_openvpn_example.conf"
+    destination = "/tmp/unattended_openvpn_example.conf"
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/labs-key.pem") # CHANGE ME
+      host        = self.public_ip
+    }
+  }
 
+  # Run the setup script
+  provisioner "remote-exec" {
+    inline = ["curl -L https://install.pivpn.io > install.sh && chmod +x install.sh && sudo apt update && sudo apt install iptables-persistent && sudo ./install.sh --unattended /tmp/unattended_openvpn_example.conf"]
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/labs-key.pem") # CHANGE ME
+      host        = self.public_ip
+    }
+  }
+
+  
   tags = {
     Name = "Primary vpn"
   }
