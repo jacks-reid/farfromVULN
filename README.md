@@ -24,18 +24,31 @@ You'll need to create your own AWS account and get API access tokens. Store thos
 
 I did my best to stay within AWS's free tier requirements. Based on my experience it is free of charge, but don't take my word for it. Set up billing alerts, learn about free tier limits, and save yourself from an unpleasant bill.
 
+In addition, you will need to subscribe to Offensive Security's custom Kali Linux image.
+
+- https://aws.amazon.com/marketplace/pp/Kali-Linux-Kali-Linux/B01M26MMTT
+
+## Usage
+
+Run the `./farfromVULN` start script and choose the correct options to set up the Vulnhub box of your choice.
+
 ## TO DO:
 
 - ~~Add in VPN capabilities to the VPC~~
-  - Add in PiVPN installation automation
-  - Add in PiVPN VPN profile creation and distribution automation
+  - ~~Add in PiVPN installation automation~~
+  - ~~Add in PiVPN VPN profile creation and distribution automation~~
   - Allow Kali ssh server password logins
 - Automate the creation of Kali profiles when a VPN profile is created
   - With appropriate shell, homedir, etc
 - Allow traffic to Kali only from VPN
 - ~~Add in pwnable machines in the cloud~~
   - Configure appropriate level of traffic outwards from vulnerable machines
-  - Automate the Vulnhub image AMI upload process
+  - ~~Automate the Vulnhub image AMI upload process~~
+    - Have automatic detection of Vulnhub tf files in `vulnerable_machines` directory to be added as options in start script
+    - Refine AMI upload process
+- Clean up Flask server
+  - Possibly use uWSGI server for long term solution
+  - Improve Flask security
 - Add in beginner CTFd platform to mess around with
   - Using a separate cloud in DigitalOcean?
 
