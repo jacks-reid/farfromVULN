@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>farfromVULN</title>
+  <meta name="description" content="SCS Labs">
+</head>
+
+<body>
+  <h1>Welcome to farfromVULN</h1>
+  <p>farfromVULN is a project that allows Vulnhub machines to be spun up easily in an AWS virtual private cloud, allowing friends to hack together</p>
+  
+  {% if vpn_ip %}
+  <p> VPN Private IP = {{ vpn_ip }}</p>
+    {% endif %}
+
+  {% if kali_ip %}
+  <p> Kali Private IP = {{ kali_ip }}</p>
+    {% endif %}    
+
+  {% if vuln_ip %}
+  <p> Vulnbox Private IP = {{ vuln_ip }}</p>
+    {% endif %}    
+
+</body>
+</html>

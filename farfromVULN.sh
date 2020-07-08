@@ -1,5 +1,7 @@
 #!/bin/bash
 
+clear
+
 echo "Welcome to farfromVULN"
 
 cat farfromVULN.logo
@@ -66,6 +68,10 @@ then
 else
     echo "Invalid input -- exiting now."
 fi
+
+# Apply to Terraform
+echo "Building machine now..."
+echo yes | terraform apply
 
 
 
