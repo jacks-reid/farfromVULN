@@ -30,7 +30,7 @@ In addition, you will need to subscribe to Offensive Security's custom Kali Linu
 
 ## Usage
 
-Run the `./farfromVULN` start script and choose the correct options to set up the Vulnhub box of your choice.
+Run the `./farfromVULN` start script and choose the correct options to set up the Vulnhub box of your choice. Once completed, `ssh` into the primary vpn set up and either: (1) create vpn profiles using `pivpn` or (2) use `export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p my_port_number` to open up a web server on the VPN public IP that can be used to distribute VPN profiles to a group.
 
 ## TO DO:
 
@@ -49,6 +49,7 @@ Run the `./farfromVULN` start script and choose the correct options to set up th
 - Clean up Flask server
   - Possibly use uWSGI server for long term solution
   - Improve Flask security
+  - Implement private IP addresses shown on Flask homepage
 - Add in beginner CTFd platform to mess around with
   - Using a separate cloud in DigitalOcean?
 
