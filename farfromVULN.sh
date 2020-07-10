@@ -139,16 +139,23 @@ else
 fi
 
 echo "Building machine now..."
-# echo yes | terraform apply # TODO: add me?
 
-terraform plan # TODO: remove me!
+# Clean up old instance IPs
+rm instance_ips.txt
 
+terraform apply
 
+terraform output -json > instance_ips.txt
 
+# Get the public IP of the PiVPN server
+VPN_PUB_IP=$(grep -A 3 PiVPN instance_ips.txt | grep value | cut -d"\"" -f 4)
 
+# Give the web app the correct VPC private ips
+echo yes | scp  -i "~/.ssh/labs-key.pem" instance_ips.txt ubuntu@$VPN_PUB_IP:/home/ubuntu/
 
-
-
+# Start the web app! Hosted on port 7894
+echo "Now starting web application..."
+ssh -i "~/.ssh/labs-key.pem" ubuntu@$VPN_PUB_IP "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894"
 
 
 

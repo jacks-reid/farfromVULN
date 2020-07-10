@@ -49,5 +49,9 @@ resource "aws_key_pair" "primary-key" {
   public_key = file("~/.ssh/labs-key.pub") # CHANGE ME
 }
 
+# Don't change the name of the output, will break Webapp :)
+output "Kali" {
+  value = aws_instance.primary_vpn.private_ip
+}
 
 

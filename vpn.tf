@@ -112,15 +112,48 @@ resource "aws_instance" "primary_vpn" {
   }
 
   provisioner "file" {
-    source      = "flask/test_vpn_ip.txt"
-    destination = "/home/ubuntu/test_vpn_ip.txt"
+    source      = "flask/faq.html"
+    destination = "/home/ubuntu/faq.html"
     connection {
       type        = "ssh"
       user        = "ubuntu"
       private_key = file("~/.ssh/labs-key.pem") # CHANGE ME
       host        = self.public_ip
     }
-  }      
+  }
+
+  provisioner "file" {
+    source      = "flask/images/kali_linux_logo.png"
+    destination = "/home/ubuntu/kali_linux_logo.png"
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/labs-key.pem") # CHANGE ME
+      host        = self.public_ip
+    }
+  }
+
+  provisioner "file" {
+    source      = "flask/images/pivpn_logo.png"
+    destination = "/home/ubuntu/pivpn_logo.png"
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/labs-key.pem") # CHANGE ME
+      host        = self.public_ip
+    }
+  }
+
+  provisioner "file" {
+    source      = "flask/images/vulnhub_logo.png"
+    destination = "/home/ubuntu/vulnhub_logo.png"
+    connection {
+      type        = "ssh"
+      user        = "ubuntu"
+      private_key = file("~/.ssh/labs-key.pem") # CHANGE ME
+      host        = self.public_ip
+    }
+  }    
 
   # Run the setup script
   provisioner "remote-exec" {
@@ -138,6 +171,10 @@ resource "aws_instance" "primary_vpn" {
       "mv templates index_template.html",
       "mkdir templates",
       "mv index_template.html templates/",
+      "mkdir images",
+      "mv kali_linux_logo.png images/",
+      "mv pivpn_logo.png images/",
+      "mv vulnhub_logo.png images/",      
       "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894 &"]
     connection {
       type        = "ssh"
@@ -152,7 +189,7 @@ resource "aws_instance" "primary_vpn" {
   }
 }
 
-
-output "IP" {
+# Don't change the name of the output, will break Webapp :)
+output "PiVPN" {
   value = aws_instance.primary_vpn.public_ip
 }

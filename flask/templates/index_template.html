@@ -3,10 +3,9 @@
   <head>
     <meta charset="utf-8">
     <title>farfromVULN</title>
-    <meta name="description" content="SCS Labs">
+    <meta name="description" content="farfromVULN">
     <!-- CSS only -->
     <link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css" integrity="sha384-9aIt2nRpC12Uk9gS9baDl411NQApFmC26EwAOH8WgZl5MYYxFfc+NcPb1dKGj7Sk" crossorigin="anonymous">
-
     <!-- JS, Popper.js, and jQuery -->
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js" integrity="sha384-DfXdz2htPH0lsSSs5nCTpuj/zy4C+OGpamoFVy38MVBnE+IbbVYUew+OrCXaRkfj" crossorigin="anonymous"></script>
     <script src="https://cdn.jsdelivr.net/npm/popper.js@1.16.0/dist/umd/popper.min.js" integrity="sha384-Q6E9RHvbIyZFJoft+2mJbHaEWldlvI9IOYy5n3zV9zzTtmI3UksdQRVvoxMfooAo" crossorigin="anonymous"></script>
@@ -36,64 +35,88 @@
       }
       
     </style>
-    <!-- Custom styles for this template -->
-    <link href="starter-template.css" rel="stylesheet">
-
   </head>
-
   <body>
-
     <nav class="navbar navbar-expand-md navbar-dark bg-dark fixed-top">
-      <a class="navbar-brand" href="#">farfromVULN</a>
+      <a class="navbar-brand" href="/">farfromVULN</a>
       <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarsExampleDefault" aria-controls="navbarsExampleDefault" aria-expanded="false" aria-label="Toggle navigation">
 	<span class="navbar-toggler-icon"></span>
       </button>
 
       <div class="collapse navbar-collapse" id="navbarsExampleDefault">
 	<ul class="navbar-nav mr-auto">
-	  <li class="nav-item disabled">
-            <a class="nav-link disabled" href="#">Home <span class="sr-only">(current)</span></a>
+	  <li class="nav-item">
+            <a class="nav-link" href="faq.html">FAQ<span class="sr-only">(current)</span></a>
 	  </li>
 	  <li class="nav-item">
-            <a class="nav-link disabled" href="#">Link</a>
-	  </li>
-	  <li class="nav-item">
-            <a class="nav-link disabled" href="#" tabindex="-1" aria-disabled="true">Disabled</a>
-	  </li>
-	  <li class="nav-item dropdown">
-            <a class="nav-link dropdown-toggle disabled" href="#" id="dropdown01" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Dropdown</a>
-            <div class="dropdown-menu" aria-labelledby="dropdown01">
-              <a class="dropdown-item" href="#">Action</a>
-              <a class="dropdown-item" href="#">Another action</a>
-              <a class="dropdown-item" href="#">Something else here</a>
-            </div>
+            <a class="nav-link" href="https://github.com/jreid45/scs-labs-aws">GitHub</a>
 	  </li>
 	</ul>
-	<form class="form-inline my-2 my-lg-0">
-	  <input class="form-control mr-sm-2" onclick="location.href='127.0.0.1:7894/'" type="text" placeholder="Search" aria-label="Search">
-	  <button class="btn btn-secondary my-2 my-sm-0" type="submit">Search</button>
-	</form>
       </div>
     </nav>
     <main role="main" class="container">
 
       <div class="starter-template">
 	<h1>Welcome to <b>farfromVULN</b></h1>
-	<p class="lead text-center">farfromVULN is a project that allows Vulnhub machines to be spun up easily in an AWS virtual private cloud, allowing friends to hack together. Unfortunately the following IPs are just placeholders, soon they will display the location of each system.</p>
-
-	{% if vpn_ip %}
-	<p class="lead text-center"> VPN Private IP = {{ vpn_ip }}</p>
-	{% endif %}
-
-	{% if kali_ip %}
-	<p class="lead text-center"> Kali Private IP = {{ kali_ip }}</p>
-	{% endif %}    
-
-	{% if vuln_ip %}
-	<p class="lead text-center"> Vulnbox Private IP = {{ vuln_ip }}</p>
-	{% endif %}        
+	<p class="lead text-center">farfromVULN is a project that allows Vulnhub machines to be spun up easily in an AWS virtual private cloud, allowing friends to hack together. Here are the machines that currently deployed in your cloud lab. After connecting to the VPN, you may access the machines using their IP addresses below.</p>
       </div>
 
+      <div class="container">
+	<div class="card-deck mb-3 text-center">
+          <div class="card mb-4 box-shadow" style="min-width: 30.5%; max-width: 30.5%;" >
+            <div class="card-header">
+              <h4 class="my-0 font-weight-normal">PiVPN</h4>
+            </div>
+            <div class="card-body">
+	      <img src="images/pivpn_logo.png" class="img-circle" width="200" height="200">
+              <ul class="list-unstyled mt-3 mb-4">
+		<li>VPN functionality for you to securely access your virtual private cloud</li>
+		<li>Powered by PiVPN</li>
+		{% if vpn_ip %}	      		
+		<li>https://github.com/pivpn/pivpn</li>
+		{% endif %}		
+		<li></li>
+              </ul>
+	      {% if vpn_ip %}	      
+              <button type="button" class="btn btn-lg btn-block btn-primary disabled"> {{ vpn_ip }} </button>
+	      {% endif %}	      
+            </div>
+          </div>
+          <div class="card mb-4 box-shadow" style="min-width: 30.5%; max-width: 30.5%;">
+            <div class="card-header">
+              <h4 class="my-0 font-weight-normal">Kali Linux</h4>
+            </div>
+            <div class="card-body">
+	      <img src="images/kali_linux_logo.png" class="img-circle" width="200" height="200">	      
+              <ul class="list-unstyled mt-3 mb-4">
+		<li>A Linux distribution for pentesting</li>
+		<li>Kali Linux serves as a C2 server</li>
+		<li>Maintained by Offensive Security</li>
+		<li>https://www.kali.org/</li>
+              </ul>
+              <button type="button" class="btn btn-lg btn-block btn-primary disabled"> {{ kali_ip }}</button>
+            </div>
+          </div>
+
+	  {% for n in vulns %}
+          <div class="card mb-4 box-shadow" style="min-width: 30.5%; max-width: 30.5%;">
+            <div class="card-header">
+              <h4 class="my-0 font-weight-normal">{{ n[0] }}</h4>
+            </div>
+            <div class="card-body">
+	      <img src="images/vulnhub_logo.png" class="img-circle" width="200" height="200">	      	      
+              <ul class="list-unstyled mt-3 mb-4">
+		<li>A Vulnhub machine</li>
+		<li>May be hard or easy</li>
+		<li>Vulnhub images not tested</li>
+		<li>https://vulnhub.com/</li>
+              </ul>
+              <button type="button" class="btn btn-lg btn-block btn-primary disabled"> {{ n[1] }} </button>
+            </div>
+          </div>
+	  {% endfor %}
+	</div>
+	
     </main><!-- /.container -->
   </body>
 </html>

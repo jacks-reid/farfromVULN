@@ -1,15 +1,34 @@
 from flask import *
+import json
 import subprocess
 app = Flask(__name__)
 
 @app.route('/')
 def index():
-    f = open('test_vpn_ip.txt', 'r')
-    lines = f.readlines()
-    vpn_ip = lines[0]
-    kali_ip = lines[1]
-    vuln_ip = lines[2]
-    return render_template('index_template.html', vpn_ip=vpn_ip, kali_ip=kali_ip, vuln_ip=vuln_ip)
+    f = open('instance_ips.txt', 'r')
+    data = json.load(f)
+
+    vpn_ip = data['PiVPN'].get('value')
+    kali_ip = data['Kali'].get('value')
+
+    vulns = []
+
+    # Find the vulnerable machine
+    for machine_name in data:
+        if "Vulnhub" in machine_name:
+            mini_list = [machine_name, data[machine_name].get('value')]
+            vulns.append(mini_list)
+
+    
+    return render_template('index_template.html', vpn_ip=vpn_ip, kali_ip=kali_ip, vulns=vulns)
+
+@app.route('/images/<image>')
+def get_image(image=None):
+    return send_file('images/' + image, mimetype='png')
+
+@app.route('/faq.html')
+def get_faq():
+    return send_file('faq.html')
 
 @app.route('/<name>')
 def get_vpn(name=None):
@@ -22,5 +41,7 @@ def get_vpn(name=None):
 
     ovpn_file = send_from_directory('/home/ubuntu/ovpns/', filename = name + '.ovpn', as_attachment = True)
     return ovpn_file
+
+
 
     
