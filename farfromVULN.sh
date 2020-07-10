@@ -111,7 +111,7 @@ then
     vuln_path="./vulnerable_machines/$search_machine"
     suffix=".tf"
     final_path="$vuln_path$suffix"
-    echo -n "
+    echo -n """
 # First Vulnhub machine on the network
 resource \"aws_instance\" \"$search_machine\" {
   ami                    = \"$ami\" # Custom AMI, uploaded using https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
@@ -124,7 +124,7 @@ resource \"aws_instance\" \"$search_machine\" {
     Name = \"$search_machine\"
   }
 }
-" > $final_path
+""" > $final_path
 
     # Copy to main directory to be part of Terraform deploy
     cp $final_path .
@@ -139,7 +139,7 @@ else
 fi
 
 echo "Building machine now..."
-# echo yes | terraform apply
+# echo yes | terraform apply # TODO: add me?
 
 terraform plan # TODO: remove me!
 

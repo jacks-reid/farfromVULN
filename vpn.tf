@@ -79,8 +79,8 @@ resource "aws_instance" "primary_vpn" {
   key_name        = "primary"
 
   provisioner "file" {
-    source      = "unattended_openvpn_example.conf"
-    destination = "/tmp/unattended_openvpn_example.conf"
+    source      = "./pivpn/pivpn_openvpn.conf"
+    destination = "/tmp/pivpn_openvpn.conf"
     connection {
       type        = "ssh"
       user        = "ubuntu"
@@ -131,7 +131,7 @@ resource "aws_instance" "primary_vpn" {
       "echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections",
       "echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections",
       "echo y | sudo apt install iptables-persistent",
-      "sudo ./install.sh --unattended /tmp/unattended_openvpn_example.conf",
+      "sudo ./install.sh --unattended /tmp/pivpn_openvpn.conf",
       "echo y | sudo apt install python3-flask",
       "export FLASK_APP=/home/ubuntu/app.py",
       "echo y | sudo apt install python3-flask",
