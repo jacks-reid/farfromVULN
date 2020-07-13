@@ -38,8 +38,9 @@ Run the `./farfromVULN` start script and choose the correct options to set up th
   - ~~Add in PiVPN installation automation~~
   - ~~Add in PiVPN VPN profile creation and distribution automation~~
   - Allow Kali ssh server password logins
-- Automate the creation of Kali profiles when a VPN profile is created
-  - With appropriate shell, homedir, etc
+- ~~Automate the creation of Kali profiles when a VPN profile is created~~
+  - ~~With appropriate shell, homedir, etc~~
+  - May need to look into solutions such as SaltStack, for a later version
 - Allow traffic to Kali only from VPN
 - ~~Add in pwnable machines in the cloud~~
   - Configure appropriate level of traffic outwards from vulnerable machines
