@@ -2,13 +2,13 @@
 
 clear
 
-rm machine_choices.txt # TODO: Remove me!
-
 echo "Welcome to farfromVULN"
 
 cat farfromVULN.logo
 
 # Pick a vulnhub machine to deploy
+# if machine_choices.txt is still left over, remove it
+rm machine_choices.txt 
 COUNTER=0
 MACHINES=$(find ./vulnerable_machines/ | cut -d'/' -f 3)
 echo "Pick a Vulnhub machine to deploy:"
@@ -104,7 +104,6 @@ do
 		sleep 30
 		aws ec2 describe-import-image-tasks --import-task-ids $ami > import_ami_task.txt	
 		check=$(grep completed ./import_ami_task.txt | wc -l)
-		# echo "check: $check" # TODO: Remove me
 		if [[ $check == 2 ]]
 		then
 		    flag=true

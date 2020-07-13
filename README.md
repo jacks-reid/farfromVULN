@@ -45,13 +45,14 @@ Run the `./farfromVULN` start script and choose the correct options to set up th
 - ~~Add in pwnable machines in the cloud~~
   - Configure appropriate level of traffic outwards from vulnerable machines
   - ~~Automate the Vulnhub image AMI upload process~~
-    - Have automatic detection of Vulnhub tf files in `vulnerable_machines` directory to be added as options in start script
+    - ~~Have automatic detection of Vulnhub tf files in `vulnerable_machines` directory to be added as options in start script~~
     - ~~Refine AMI upload process~~
 - ~~Clean up Flask server~~
   - Possibly use uWSGI server for long term solution
   - Improve Flask security
   - ~~Implement private IP addresses shown on Flask homepage~~
   - Implement SSL security with Let's Encrypt
+- Add AWS profile selection
 - Debug and test the platform through a variety of use cases
 - Install from start to finish from a fresh AWS account
   - Document quick start guide
