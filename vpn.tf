@@ -84,7 +84,7 @@ resource "aws_instance" "primary_vpn" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
@@ -95,7 +95,7 @@ resource "aws_instance" "primary_vpn" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
@@ -106,7 +106,7 @@ resource "aws_instance" "primary_vpn" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
@@ -117,7 +117,7 @@ resource "aws_instance" "primary_vpn" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
@@ -128,7 +128,7 @@ resource "aws_instance" "primary_vpn" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
@@ -139,7 +139,7 @@ resource "aws_instance" "primary_vpn" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
@@ -150,7 +150,7 @@ resource "aws_instance" "primary_vpn" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }    
@@ -179,7 +179,7 @@ resource "aws_instance" "primary_vpn" {
     connection {
       type        = "ssh"
       user        = "ubuntu"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }

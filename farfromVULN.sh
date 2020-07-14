@@ -1,5 +1,11 @@
 #!/bin/bash
 
+# Text constants
+MAGENTA='\e[95m'
+NC='\033[0m'
+BOLD='\e[1m'
+NORMAL='\e[21m'
+
 upload_image() {
     # Get function arguments
     file_name=$1
@@ -88,13 +94,13 @@ clean_up
 
 clear
 
-echo "Welcome to farfromVULN"
+echo -e "${MAGENTA}${BOLD}Welcome to farfromVULN"
+
 
 cat farfromVULN.logo
 
+
 # Pick a vulnhub machine to deploy
-# if machine_choices.txt is still left over, remove it
-rm machine_choices.txt 
 COUNTER=0
 MACHINES=$(find ./vulnerable_machines/ | cut -d'/' -f 3)
 echo "Pick a Vulnhub machine to deploy:"
@@ -112,6 +118,9 @@ echo "$COUNTER.Search" >> machine_choices.txt
 COUNTER=$((COUNTER+1))
 echo "($COUNTER) Import local Vulnhub image"
 echo "$COUNTER.Import" >> machine_choices.txt
+
+# Default color and font
+echo -e "${NORMAL}${NC}"
 
 # read in the choice
 echo -n "> "

@@ -22,7 +22,7 @@ resource "aws_instance" "kali-machine" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
@@ -33,7 +33,7 @@ resource "aws_instance" "kali-machine" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file(vars.private_key_path) # CHANGE ME
+      private_key = file(var.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
