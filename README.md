@@ -34,16 +34,18 @@ Run the `./farfromVULN` start script and choose the correct options to set up th
 
 ## TO DO:
 
+- Add fancy colors
 - ~~Add in VPN capabilities to the VPC~~
   - ~~Add in PiVPN installation automation~~
   - ~~Add in PiVPN VPN profile creation and distribution automation~~
-  - Allow Kali ssh server password logins
+  - Allow Kali ssh server password logins (needs to be manual)
 - ~~Automate the creation of Kali profiles when a VPN profile is created~~
   - ~~With appropriate shell, homedir, etc~~
   - May need to look into solutions such as SaltStack, for a later version
-- Allow traffic to Kali only from VPN
+- ~~Allow traffic to Kali only from VPN~~
 - ~~Add in pwnable machines in the cloud~~
-  - Configure appropriate level of traffic outwards from vulnerable machines
+  - ~~Add image file checksum verification~~
+  - ~~Configure appropriate level of traffic outwards from vulnerable machines~~
   - ~~Automate the Vulnhub image AMI upload process~~
     - ~~Have automatic detection of Vulnhub tf files in `vulnerable_machines` directory to be added as options in start script~~
     - ~~Refine AMI upload process~~

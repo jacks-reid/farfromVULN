@@ -34,12 +34,14 @@ do
     if [[ $vuln_choice =~ $NUM ]]
     then
 	SELECTED_MACHINE=$(echo $line | cut -d'.' -f 2)
+	# If the user chose to search, then begin search functionality
 	if [[ $SELECTED_MACHINE =~ "Search" ]]
 	then
 	    echo -n "Vulnhub machine to search for: "
 	    read search_machine </dev/tty
 	    wget -q https://download.vulnhub.com/checksum.txt
 	    VAL=$(grep -i -m 1 $search_machine checksum.txt | cut -d' ' -f 3)
+	    CHECKSUM=$(grep -i -m 1 $search_machine checksum.txt | cut -d' ' -f 1)	    
 	    file_name=$(echo "$VAL" | rev | cut -d'/' -f 1 | rev)
 	    VAL2="https://download.vulnhub.com/"
 	    VAL3="$VAL2$VAL"
@@ -49,20 +51,39 @@ do
 	    echo "Are you sure you want to download this file? (y/n)"
 	    echo -n "> "
 	    read confirm </dev/tty
-	    
 	    if [[ $confirm = "y" ]]
 	    then
 		rm checksum.txt
 		echo "Retrieving file..."
 		wget --directory-prefix=./vulnhub_ovas/ $VAL3
 
+		# Confirm successful download with checksum		
+		COMPARE=$(md5sum ./vulnhub_ovas/$file_name | cut -d' ' -f 1)		
+		echo "COMPARE: $COMPARE"
+		echo "CHECKSUM: $CHECKSUM"
+
+		if [[ $COMPARE != $CHECKSUM ]]
+		then
+		    echo "ERROR: Downloaded file did not match download checksum. Exiting now and removing the downloaded file."
+		    rm ./vulnhub_ovas/$file_name
+		    exit 1
+		fi
+		
+		# TODO: Account for different compression file types
 		# Regex check to see if its a zip file
 		if [[ $file_name =~ "zip" ]];
 		then
-		    unzip ./vulnhub_ovas/$file_name;
+		    unzip ./vulnhub_ovas/$file_name -d ./vulnhub_ovas/
 		    # From here we need to regex and find a compatible file type,
 		    # then set that file type as the new file name for upload
-		    $file_name=$(find ./vulnhub_ovas | grep -E "ova|vmdk" -m 1)
+		    file_name=$(find ./vulnhub_ovas | grep -E "ova|vmdk" -m 1)
+
+		    # If no ova or vmdk file is found, then exit the importation process
+		    if [[ $file_name == "./vulnhub_ovas" ]]
+		    then
+			echo "The file is not in a compatible file format and cannot be imported in AWS. Exiting now."
+			exit 1
+		    fi
 		    file_type=$(echo $file_name | cut -d'.' -f 3)	    
 		fi
 
@@ -145,8 +166,6 @@ resource \"aws_instance\" \"$search_machine\" {
     fi
     
 done < machine_choices.txt
-
-
 
 echo "Building machine now..."
 
