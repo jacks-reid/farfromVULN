@@ -22,7 +22,7 @@ resource "aws_instance" "kali-machine" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("~/.ssh/labs-key.pem") # CHANGE ME
+      private_key = file(vars.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
@@ -33,7 +33,7 @@ resource "aws_instance" "kali-machine" {
     connection {
       type        = "ssh"
       user        = "ec2-user"
-      private_key = file("~/.ssh/labs-key.pem") # CHANGE ME
+      private_key = file(vars.private_key_path) # CHANGE ME
       host        = self.public_ip
     }
   }
@@ -46,7 +46,7 @@ resource "aws_instance" "kali-machine" {
 # Upload your own key here
 resource "aws_key_pair" "primary-key" {
   key_name   = "primary"
-  public_key = file("~/.ssh/labs-key.pub") # CHANGE ME
+  public_key = file(var.public_key_path) # CHANGE ME
 }
 
 # Don't change the name of the output, will break Webapp :)
