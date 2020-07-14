@@ -49,6 +49,8 @@ Run the `./farfromVULN` start script and choose the correct options to set up th
   - ~~Automate the Vulnhub image AMI upload process~~
     - ~~Have automatic detection of Vulnhub tf files in `vulnerable_machines` directory to be added as options in start script~~
     - ~~Refine AMI upload process~~
+    - Add in different decompression processes
+    - Implement local file upload
 - ~~Clean up Flask server~~
   - Possibly use uWSGI server for long term solution
   - Improve Flask security

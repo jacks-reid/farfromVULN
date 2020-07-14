@@ -1,5 +1,83 @@
 #!/bin/bash
 
+upload_image() {
+    # Get function arguments
+    file_name=$1
+    file_type=$2
+
+    # Upload process begins here
+    # Get file type
+    if [[ $file_type == "" ]]; then
+	file_type=$(echo $file_name | cut -d'.' -f 2)
+    fi
+    echo "File type detected: $file_type"	
+
+    echo "Uploading to AWS..."
+    aws s3 cp vulnhub_ovas/$file_name s3://vmstorage/ --profile superadmin
+
+    # Import image based on type of file it is
+    # TODO: Add name tags
+    aws ec2 import-image --disk-containers Format=$file_type,UserBucket="{S3Bucket=vmstorage,S3Key=$file_name}" --profile superadmin --region us-east-2 > import_ami_task.txt
+
+    # Get the AMI ID of the image
+    ami=$(grep import import_ami_task.txt | cut -d'"' -f 4)
+    echo "AMI ID of the uploaded image: $ami"
+
+    echo "aws ec2 describe-import-image-tasks --import-task-ids $task_id"
+
+    # Loop and check when the upload process has completed
+    # TODO: Check if upload failed and exit script
+    flag=false
+    start=$SECONDS
+    while [ $flag != true ]
+    do
+	duration=$(( SECONDS - start ))
+	echo "Checking for completion on image upload...  [ $duration seconds elapsed ]" # TODO: Add more informative message
+	sleep 30
+	aws ec2 describe-import-image-tasks --import-task-ids $ami > import_ami_task.txt	
+	check=$(grep completed ./import_ami_task.txt | wc -l)
+	if [[ $check == 2 ]]
+	then
+	    flag=true
+	    echo "Process has completed!"
+	fi
+    done
+
+    # # Apply to Terraform, should also build a .tf file with the new AMI uploaded
+    vuln_path="./vulnerable_machines/$search_machine"
+    suffix=".tf"
+    final_path="$vuln_path$suffix"
+    echo -n """
+# First Vulnhub machine on the network
+resource \"aws_instance\" \"$search_machine\" {
+  ami                    = \"$ami\" # Custom AMI, uploaded using https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
+  instance_type          = var.instance_type
+  key_name               = \"primary\"
+  subnet_id              = aws_subnet.my_subnet.id
+  vpc_security_group_ids = [aws_security_group.allow_vuln.id]
+
+  tags = {
+    Name = \"$search_machine\"
+  }
+}
+""" > $final_path
+
+    # Copy to main directory to be part of Terraform deploy
+    cp $final_path .
+
+    echo "Vulnhub image successfully uploaded to AWS and ready for deployment!"
+    
+}
+
+clean_up() {
+    # Clean up all the files we create
+    rm machine_choices
+    rm checksum.txt
+    rm import_ami_task.txt
+}
+
+clean_up
+
 clear
 
 echo "Welcome to farfromVULN"
@@ -23,6 +101,10 @@ COUNTER=$((COUNTER+1))
 echo "($COUNTER) Search for Vulnhub machine"
 echo "$COUNTER.Search" >> machine_choices.txt
 
+COUNTER=$((COUNTER+1))
+echo "($COUNTER) Import local Vulnhub image"
+echo "$COUNTER.Import" >> machine_choices.txt
+
 # read in the choice
 echo -n "> "
 read vuln_choice
@@ -34,6 +116,18 @@ do
     if [[ $vuln_choice =~ $NUM ]]
     then
 	SELECTED_MACHINE=$(echo $line | cut -d'.' -f 2)
+
+	# TODO: Add import functionality
+	# To import an image, store the image in ./vulnhub_ovas/ directory
+	if [[ $SELECTED_MACHINE =~ "Import" ]]
+	then
+	    echo "What file do you want to import?"
+	    echo -n "> "
+	    read IMPORT_FILE </dev/tty
+	    IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
+	    import_image $IMPORT_FILE $IMPORT_FILE_TYPE
+	fi
+	
 	# If the user chose to search, then begin search functionality
 	if [[ $SELECTED_MACHINE =~ "Search" ]]
 	then
@@ -94,71 +188,9 @@ do
 		exit
 	    fi
 
-	    # Get file type
-	    # TO DO: fix the
-	    if [[ $file_type == "" ]]; then
-		file_type=$(echo $file_name | cut -d'.' -f 2)
-	    fi
-	    echo "File type detected: $file_type"	
+	    # upload the image to AWS
+	    upload_image $file_name $file_type
 
-	    echo "Uploading to AWS..."
-	    aws s3 cp vulnhub_ovas/$file_name s3://vmstorage/ --profile superadmin
-
-	    # Import image based on type of file it is
-	    # TODO: Add name tags
-	    aws ec2 import-image --disk-containers Format=$file_type,UserBucket="{S3Bucket=vmstorage,S3Key=$file_name}" --profile superadmin --region us-east-2 > import_ami_task.txt
-
-	    # Get the AMI ID of the image
-	    ami=$(grep import import_ami_task.txt | cut -d'"' -f 4)
-	    echo "AMI ID of the uploaded image: $ami"
-
-	    echo "aws ec2 describe-import-image-tasks --import-task-ids $task_id"
-
-	    # Loop and check when the upload process has completed
-	    # TODO: Check if upload failed and exit script
-	    flag=false
-	    start=$SECONDS
-	    while [ $flag != true ]
-	    do
-		duration=$(( SECONDS - start ))
-		echo "Checking for completion on image upload...  [ $duration seconds elapsed ]" # TODO: Add more informative message
-		sleep 30
-		aws ec2 describe-import-image-tasks --import-task-ids $ami > import_ami_task.txt	
-		check=$(grep completed ./import_ami_task.txt | wc -l)
-		if [[ $check == 2 ]]
-		then
-		    flag=true
-		    echo "Process has completed!"
-		fi
-	    done
-
-	    # # Apply to Terraform, should also build a .tf file with the new AMI uploaded
-	    vuln_path="./vulnerable_machines/$search_machine"
-	    suffix=".tf"
-	    final_path="$vuln_path$suffix"
-	    echo -n """
-# First Vulnhub machine on the network
-resource \"aws_instance\" \"$search_machine\" {
-  ami                    = \"$ami\" # Custom AMI, uploaded using https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
-  instance_type          = var.instance_type
-  key_name               = \"primary\"
-  subnet_id              = aws_subnet.my_subnet.id
-  vpc_security_group_ids = [aws_security_group.allow_vuln.id]
-
-  tags = {
-    Name = \"$search_machine\"
-  }
-}
-""" > $final_path
-
-	    # Copy to main directory to be part of Terraform deploy
-	    cp $final_path .
-
-	    echo "Vulnhub image successfully uploaded to AWS and ready for deployment!"
-
-	    # clean up
-	    rm import_ami_task.txt
-	    
 	else
 	    cp vulnerable_machines/$SELECTED_MACHINE.tf .
 	    echo "cp vulnerable_machines/$SELECTED_MACHINE.tf .     	    "
@@ -169,23 +201,23 @@ done < machine_choices.txt
 
 echo "Building machine now..."
 
-# Clean up old instance IPs
-rm instance_ips.txt
-rm machine_choices.txt
-
 terraform apply
 
-terraform output -json > instance_ips.txt
+if [[ $? -eq 0 ]]
+then
+    terraform output -json > instance_ips.txt
+    
+    # Get the public IP of the PiVPN server
+    VPN_PUB_IP=$(grep -A 3 PiVPN instance_ips.txt | grep value | cut -d"\"" -f 4)
+    # Give the web app the correct VPC private ips
+    
+    echo yes | scp  -i "~/.ssh/labs-key.pem" instance_ips.txt ubuntu@$VPN_PUB_IP:/home/ubuntu/
 
-# Get the public IP of the PiVPN server
-VPN_PUB_IP=$(grep -A 3 PiVPN instance_ips.txt | grep value | cut -d"\"" -f 4)
-
-# Give the web app the correct VPC private ips
-echo yes | scp  -i "~/.ssh/labs-key.pem" instance_ips.txt ubuntu@$VPN_PUB_IP:/home/ubuntu/
-
-# Start the web app! Hosted on port 7894
-echo "Now starting web application..."
-ssh -i "~/.ssh/labs-key.pem" ubuntu@$VPN_PUB_IP "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894"
-
-
+    # Start the web app! Hosted on port 7894
+    echo "Now starting web application..."
+    ssh -i "~/.ssh/labs-key.pem" ubuntu@$VPN_PUB_IP "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894"
+else
+    echo "Terraform deployment failed. Now exiting..."
+    exit 1
+fi
 
