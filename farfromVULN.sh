@@ -5,6 +5,8 @@ MAGENTA='\e[95m'
 NC='\033[0m'
 BOLD='\e[1m'
 NORMAL='\e[21m'
+RED='\e[91m'
+EXIT='echo -e \e[91m\e[1m'
 
 upload_image() {
     # Get function arguments
@@ -84,6 +86,7 @@ resource \"aws_instance\" \"$search_machine\" {
 }
 
 clean_up() {
+    ${EXIT}
     # Clean up all the files we create
     rm machine_choices.txt 2> /dev/null
     rm checksum.txt 2> /dev/null
@@ -96,9 +99,7 @@ clear
 
 echo -e "${MAGENTA}${BOLD}Welcome to farfromVULN"
 
-
 cat farfromVULN.logo
-
 
 # Pick a vulnhub machine to deploy
 COUNTER=0
