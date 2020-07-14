@@ -15,6 +15,14 @@ upload_image() {
     echo "Uploading to AWS..."
     aws s3 cp vulnhub_ovas/$file_name s3://vmstorage/ --profile superadmin
 
+    # Check if upload cancelled, and if so, exit program
+    if [[ $? -eq 1 ]]
+    then
+	clean_up
+	echo "Upload failed. Exiting now..."
+	exit 1
+    fi
+
     # Import image based on type of file it is
     # TODO: Add name tags
     aws ec2 import-image --disk-containers Format=$file_type,UserBucket="{S3Bucket=vmstorage,S3Key=$file_name}" --profile superadmin --region us-east-2 > import_ami_task.txt
@@ -43,7 +51,7 @@ upload_image() {
 	fi
     done
 
-    # # Apply to Terraform, should also build a .tf file with the new AMI uploaded
+    # Apply to Terraform, should also build a .tf file with the new AMI uploaded
     vuln_path="./vulnerable_machines/$search_machine"
     suffix=".tf"
     final_path="$vuln_path$suffix"
@@ -71,9 +79,9 @@ resource \"aws_instance\" \"$search_machine\" {
 
 clean_up() {
     # Clean up all the files we create
-    rm machine_choices
-    rm checksum.txt
-    rm import_ami_task.txt
+    rm machine_choices.txt 2> /dev/null
+    rm checksum.txt 2> /dev/null
+    rm import_ami_task.txt 2> /dev/null
 }
 
 clean_up
@@ -125,11 +133,11 @@ do
 	    echo -n "> "
 	    read IMPORT_FILE </dev/tty
 	    IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
-	    import_image $IMPORT_FILE $IMPORT_FILE_TYPE
-	fi
+	    upload_image $IMPORT_FILE $IMPORT_FILE_TYPE
+
 	
 	# If the user chose to search, then begin search functionality
-	if [[ $SELECTED_MACHINE =~ "Search" ]]
+	elif [[ $SELECTED_MACHINE =~ "Search" ]]
 	then
 	    echo -n "Vulnhub machine to search for: "
 	    read search_machine </dev/tty
@@ -160,6 +168,7 @@ do
 		then
 		    echo "ERROR: Downloaded file did not match download checksum. Exiting now and removing the downloaded file."
 		    rm ./vulnhub_ovas/$file_name
+		    clean_up
 		    exit 1
 		fi
 		
@@ -175,17 +184,17 @@ do
 		    # If no ova or vmdk file is found, then exit the importation process
 		    if [[ $file_name == "./vulnhub_ovas" ]]
 		    then
+			clean_up			
 			echo "The file is not in a compatible file format and cannot be imported in AWS. Exiting now."
 			exit 1
 		    fi
 		    file_type=$(echo $file_name | cut -d'.' -f 3)	    
 		fi
-
 	    elif [[ $confirm = "n" ]]
 	    then
-		rm checksum.txt
+		clean_up
 		echo "bye!"
-		exit
+		exit 1
 	    fi
 
 	    # upload the image to AWS
@@ -217,6 +226,7 @@ then
     echo "Now starting web application..."
     ssh -i "~/.ssh/labs-key.pem" ubuntu@$VPN_PUB_IP "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894"
 else
+    clean_up
     echo "Terraform deployment failed. Now exiting..."
     exit 1
 fi
