@@ -48,9 +48,25 @@ upload_image() {
     while [ $flag != true ]
     do
 	duration=$(( SECONDS - start ))
-	echo "Checking for completion on image upload...  [ $duration seconds elapsed ]" # TODO: Add more informative message
+	echo "Checking for completion on image upload...  [ $duration seconds elapsed ]" 
 	sleep 30
-	aws ec2 describe-import-image-tasks --import-task-ids $ami > import_ami_task.txt	
+
+	aws ec2 describe-import-image-tasks --import-task-ids $ami > import_ami_task.txt
+	
+	# Check for failure
+	FAILURE=$(grep deleting ./import_ami_task.txt | wc -l)
+	if [[ $FAILURE > 0 ]]
+	then
+	    FAILURE_MSG=$(grep StatusMessage ./import_ami_task.txt)	    
+	    clean_up
+	    echo "Image is not compatible for the AWS Image Import process. Exiting now..."
+	    echo "$FAILUREMSG"
+	    echo "Removing downloaded file..."
+	    rm ./vulnhub_ovas/$file_name
+	    exit 1
+	fi
+	
+	# Check for success
 	check=$(grep completed ./import_ami_task.txt | wc -l)
 	if [[ $check == 2 ]]
 	then
@@ -64,7 +80,7 @@ upload_image() {
     suffix=".tf"
     final_path="$vuln_path$suffix"
     echo -n """
-# First Vulnhub machine on the network
+# A Vulnhub machine on the network
 resource \"aws_instance\" \"$search_machine\" {
   ami                    = \"$ami\" # Custom AMI, uploaded using https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
   instance_type          = var.instance_type
@@ -145,8 +161,8 @@ do
 	    IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
 	    upload_image $IMPORT_FILE $IMPORT_FILE_TYPE
 
-	
-	# If the user chose to search, then begin search functionality
+	    
+	    # If the user chose to search, then begin search functionality
 	elif [[ $SELECTED_MACHINE =~ "Search" ]]
 	then
 	    echo -n "Vulnhub machine to search for: "
@@ -212,10 +228,9 @@ do
 
 	else
 	    cp vulnerable_machines/$SELECTED_MACHINE.tf .
-	    echo "cp vulnerable_machines/$SELECTED_MACHINE.tf .     	    "
+	    echo "Adding $SELECTED_MACHINE to lab build..."
 	fi
     fi
-    
 done < machine_choices.txt
 
 echo "Building machine now..."
