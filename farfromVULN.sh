@@ -248,9 +248,27 @@ echo "What is the path to the SSH private key to use with this lab?"
 echo -n "> "
 read SSH_PRIV_KEY_PATH
 
+# Test to see if that file exists and is a valid SSH key
+ssh-keygen -l -f $SSH_PRIV_KEY_PATH
+if [[ $? -ne 0 ]]
+then
+    clean_up
+    echo "Exiting now..."
+    exit 1
+fi
+
 echo "What is the path to the SSH public key to use with this lab?"
 echo -n "> "
 read SSH_PUB_KEY_PATH
+
+# Test to see if that file exists and is a valid SSH key
+ssh-keygen -l -f $SSH_PUB_KEY_PATH
+if [[ $? -ne 0 ]]
+then
+    clean_up
+    echo "Exiting now..."
+    exit 1
+fi
 
 export TF_VAR_private_key_path=$SSH_PRIV_KEY_PATH
 export TF_VAR_public_key_path=$SSH_PUB_KEY_PATH
