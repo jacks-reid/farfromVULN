@@ -243,6 +243,19 @@ do
     fi
 done < machine_choices.txt
 
+# Select the SSH keypair to use with this lab
+echo "What is the path to the SSH private key to use with this lab?"
+echo -n "> "
+read SSH_PRIV_KEY_PATH
+
+echo "What is the path to the SSH public key to use with this lab?"
+echo -n "> "
+read SSH_PUB_KEY_PATH
+
+export TF_VAR_private_key_path=$SSH_PRIV_KEY_PATH
+export TF_VAR_public_key_path=$SSH_PUB_KEY_PATH
+
+
 echo "Building machine now..."
 
 terraform apply
