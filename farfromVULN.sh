@@ -18,10 +18,16 @@ upload_image() {
     if [[ $file_type == "" ]]; then
 	file_type=$(echo $file_name | cut -d'.' -f 2)
     fi
-    echo "File type detected: $file_type"	
+    echo "File type detected: $file_type"
+
+
+    echo "Enter AWS profile with S3 Bucket permissions: "
+    echo -n "> "
+    read S3_USER
+    
 
     echo "Uploading to AWS..."
-    aws s3 cp vulnhub_ovas/$file_name s3://vmstorage/ --profile superadmin
+    aws s3 cp vulnhub_ovas/$file_name s3://vmstorage/ --profile $S3_USER
 
     # Check if upload cancelled, and if so, exit program
     if [[ $? -eq 1 ]]
@@ -31,9 +37,13 @@ upload_image() {
 	exit 1
     fi
 
+    echo "Enter AWS profile with Image Upload permissions: "
+    echo -n "> "
+    read IMG_UPLOAD_USER
+    
     # Import image based on type of file it is
     # TODO: Add name tags
-    aws ec2 import-image --disk-containers Format=$file_type,UserBucket="{S3Bucket=vmstorage,S3Key=$file_name}" --profile superadmin --region us-east-2 > import_ami_task.txt
+    aws ec2 import-image --disk-containers Format=$file_type,UserBucket="{S3Bucket=vmstorage,S3Key=$file_name}" --profile $IMG_UPLOAD_USER --region us-east-2 > import_ami_task.txt
 
     # Get the AMI ID of the image
     ami=$(grep import import_ami_task.txt | cut -d'"' -f 4)
