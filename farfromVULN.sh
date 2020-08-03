@@ -10,15 +10,15 @@ EXIT='echo -e \e[91m\e[1m'
 
 upload_image() {
     # Get function arguments
-    file_name=$1
-    file_type=$2
+    FILE_NAME=$1
+    FILE_TYPE=$2
 
     # Upload process begins here
     # Get file type
-    if [[ $file_type == "" ]]; then
-	file_type=$(echo $file_name | cut -d'.' -f 2)
+    if [[ $FILE_TYPE == "" ]]; then
+	FILE_TYPE=$(echo $FILE_NAME | cut -d'.' -f 2)
     fi
-    echo "File type detected: $file_type"
+    echo "File type detected: $FILE_TYPE"
 
 
     echo "Enter AWS profile with S3 Bucket permissions: "
@@ -27,7 +27,7 @@ upload_image() {
     
 
     echo "Uploading to AWS..."
-    aws s3 cp vulnhub_ovas/$file_name s3://vmstorage/ --profile $S3_USER
+    aws s3 cp vulnhub_ovas/$FILE_NAME s3://vmstorage/ --profile $S3_USER
 
     # Check if upload cancelled, and if so, exit program
     if [[ $? -eq 1 ]]
@@ -43,25 +43,25 @@ upload_image() {
     
     # Import image based on type of file it is
     # TODO: Add name tags
-    aws ec2 import-image --disk-containers Format=$file_type,UserBucket="{S3Bucket=vmstorage,S3Key=$file_name}" --profile $IMG_UPLOAD_USER --region us-east-2 > import_ami_task.txt
+    aws ec2 import-image --disk-containers Format=$FILE_TYPE,UserBucket="{S3Bucket=vmstorage,S3Key=$FILE_NAME}" --profile $IMG_UPLOAD_USER --region us-east-2 > import_ami_task.txt
 
     # Get the AMI ID of the image
     ami=$(grep import import_ami_task.txt | cut -d'"' -f 4)
-    echo "AMI ID of the uploaded image: $ami"
+    echo "AMI ID of the uploaded image: $AMI"
 
     echo "aws ec2 describe-import-image-tasks --import-task-ids $task_id"
 
     # Loop and check when the upload process has completed
     # TODO: Check if upload failed and exit script
-    flag=false
-    start=$SECONDS
-    while [ $flag != true ]
+    FLAG=false
+    START=$SECONDS
+    while [ $FLAG != true ]
     do
-	duration=$(( SECONDS - start ))
-	echo "Checking for completion on image upload...  [ $duration seconds elapsed ]" 
+	DURATION=$(( SECONDS - START ))
+	echo "Checking for completion on image upload...  [ $DURATION seconds elapsed ]" 
 	sleep 30
 
-	aws ec2 describe-import-image-tasks --import-task-ids $ami > import_ami_task.txt
+	aws ec2 describe-import-image-tasks --import-task-ids $AMI > import_ami_task.txt
 	
 	# Check for failure
 	FAILURE=$(grep deleting ./import_ami_task.txt | wc -l)
@@ -72,7 +72,7 @@ upload_image() {
 	    echo "Image is not compatible for the AWS Image Import process. Exiting now..."
 	    echo "$FAILUREMSG"
 	    echo "Removing downloaded file..."
-	    rm ./vulnhub_ovas/$file_name
+	    rm ./vulnhub_ovas/$FILE_NAME
 	    exit 1
 	fi
 	
@@ -80,32 +80,32 @@ upload_image() {
 	check=$(grep completed ./import_ami_task.txt | wc -l)
 	if [[ $check == 2 ]]
 	then
-	    flag=true
+	    FLAG=true
 	    echo "Process has completed!"
 	fi
     done
 
     # Apply to Terraform, should also build a .tf file with the new AMI uploaded
-    vuln_path="./vulnerable_machines/$search_machine"
-    suffix=".tf"
-    final_path="$vuln_path$suffix"
+    VULN_PATH="./vulnerable_machines/$SEARCH_MACHINE"
+    SUFFIX=".tf"
+    FINAL_PATH="$VULN_PATH$SUFFIX"
     echo -n """
 # A Vulnhub machine on the network
-resource \"aws_instance\" \"$search_machine\" {
-  ami                    = \"$ami\" # Custom AMI, uploaded using https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
+resource \"aws_instance\" \"$SEARCH_MACHINE\" {
+  ami                    = \"$AMI\" # Custom AMI, uploaded using https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
   instance_type          = var.instance_type
   key_name               = \"primary\"
   subnet_id              = aws_subnet.my_subnet.id
   vpc_security_group_ids = [aws_security_group.allow_vuln.id]
 
   tags = {
-    Name = \"$search_machine\"
+    Name = \"$SEARCH_MACHINE\"
   }
 }
-""" > $final_path
+""" > $FINAL_PATH
 
     # Copy to main directory to be part of Terraform deploy
-    cp $final_path .
+    cp $FINAL_PATH .
 
     echo "Vulnhub image successfully uploaded to AWS and ready for deployment!"
     
@@ -139,7 +139,7 @@ do
     echo "$COUNTER.$MACHINE" >> machine_choices.txt
 done
 COUNTER=$((COUNTER+1))
-echo "($COUNTER) Search for Vulnhub machine"
+echo "($COUNTER) Search remotely for Vulnhub machine *UNSTABLE*"
 echo "$COUNTER.Search" >> machine_choices.txt
 
 COUNTER=$((COUNTER+1))
@@ -151,13 +151,13 @@ echo -e "${NORMAL}${NC}"
 
 # read in the choice
 echo -n "> "
-read vuln_choice
+read VULN_CHOICE
 
 # Loop through and find the machine the user selected
 while IFS= read -r line;
 do
     NUM=$(echo $line | cut -d'.' -f 1)
-    if [[ $vuln_choice =~ $NUM ]]
+    if [[ $VULN_CHOICE =~ $NUM ]]
     then
 	SELECTED_MACHINE=$(echo $line | cut -d'.' -f 2)
 
@@ -176,11 +176,11 @@ do
 	elif [[ $SELECTED_MACHINE =~ "Search" ]]
 	then
 	    echo -n "Vulnhub machine to search for: "
-	    read search_machine </dev/tty
+	    read SEARCH_MACHINE </dev/tty
 	    wget -q https://download.vulnhub.com/checksum.txt
-	    VAL=$(grep -i -m 1 $search_machine checksum.txt | cut -d' ' -f 3)
-	    CHECKSUM=$(grep -i -m 1 $search_machine checksum.txt | cut -d' ' -f 1)	    
-	    file_name=$(echo "$VAL" | rev | cut -d'/' -f 1 | rev)
+	    VAL=$(grep -i -m 1 $SEARCH_MACHINE checksum.txt | cut -d' ' -f 3)
+	    CHECKSUM=$(grep -i -m 1 $SEARCH_MACHINE checksum.txt | cut -d' ' -f 1)	    
+	    FILE_NAME=$(echo "$VAL" | rev | cut -d'/' -f 1 | rev)
 	    VAL2="https://download.vulnhub.com/"
 	    VAL3="$VAL2$VAL"
 	    echo "Found file at $VAL3"
@@ -196,35 +196,35 @@ do
 		wget --directory-prefix=./vulnhub_ovas/ $VAL3
 
 		# Confirm successful download with checksum		
-		COMPARE=$(md5sum ./vulnhub_ovas/$file_name | cut -d' ' -f 1)		
+		COMPARE=$(md5sum ./vulnhub_ovas/$FILE_NAME | cut -d' ' -f 1)		
 		echo "COMPARE: $COMPARE"
 		echo "CHECKSUM: $CHECKSUM"
 
 		if [[ $COMPARE != $CHECKSUM ]]
 		then
 		    echo "ERROR: Downloaded file did not match download checksum. Exiting now and removing the downloaded file."
-		    rm ./vulnhub_ovas/$file_name
+		    rm ./vulnhub_ovas/$FILE_NAME
 		    clean_up
 		    exit 1
 		fi
 		
 		# TODO: Account for different compression file types
 		# Regex check to see if its a zip file
-		if [[ $file_name =~ "zip" ]];
+		if [[ $FILE_NAME =~ "zip" ]];
 		then
-		    unzip ./vulnhub_ovas/$file_name -d ./vulnhub_ovas/
+		    unzip ./vulnhub_ovas/$FILE_NAME -d ./vulnhub_ovas/
 		    # From here we need to regex and find a compatible file type,
 		    # then set that file type as the new file name for upload
-		    file_name=$(find ./vulnhub_ovas | grep -E "ova|vmdk" -m 1)
+		    FILE_NAME=$(find ./vulnhub_ovas | grep -E "ova|vmdk" -m 1)
 
 		    # If no ova or vmdk file is found, then exit the importation process
-		    if [[ $file_name == "./vulnhub_ovas" ]]
+		    if [[ $FILE_NAME == "./vulnhub_ovas" ]]
 		    then
 			clean_up			
 			echo "The file is not in a compatible file format and cannot be imported in AWS. Exiting now."
 			exit 1
 		    fi
-		    file_type=$(echo $file_name | cut -d'.' -f 3)	    
+		    FILE_TYPE=$(echo $FILE_NAME | cut -d'.' -f 3)	    
 		fi
 	    elif [[ $confirm = "n" ]]
 	    then
@@ -234,7 +234,7 @@ do
 	    fi
 
 	    # upload the image to AWS
-	    upload_image $file_name $file_type
+	    upload_image $FILE_NAME $FILE_TYPE
 
 	else
 	    cp vulnerable_machines/$SELECTED_MACHINE.tf .
