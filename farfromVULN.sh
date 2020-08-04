@@ -12,6 +12,7 @@ upload_image() {
     # Get function arguments
     FILE_NAME=$1
     FILE_TYPE=$2
+    NOOVA_NAME=$3
 
     # Upload process begins here
     # Get file type
@@ -23,7 +24,7 @@ upload_image() {
 
     echo "Enter AWS profile with S3 Bucket permissions: "
     echo -n "> "
-    read S3_USER
+    read S3_USER </dev/tty
     
 
     echo "Uploading to AWS..."
@@ -39,17 +40,17 @@ upload_image() {
 
     echo "Enter AWS profile with Image Upload permissions: "
     echo -n "> "
-    read IMG_UPLOAD_USER
+    read IMG_UPLOAD_USER </dev/tty
     
     # Import image based on type of file it is
     # TODO: Add name tags
     aws ec2 import-image --disk-containers Format=$FILE_TYPE,UserBucket="{S3Bucket=vmstorage,S3Key=$FILE_NAME}" --profile $IMG_UPLOAD_USER --region us-east-2 > import_ami_task.txt
 
     # Get the AMI ID of the image
-    ami=$(grep import import_ami_task.txt | cut -d'"' -f 4)
-    echo "AMI ID of the uploaded image: $AMI"
-
-    echo "aws ec2 describe-import-image-tasks --import-task-ids $task_id"
+    AMI=$(grep import import_ami_task.txt | cut -d'"' -f 4)
+    AMI_ID=$(grep ImageId | cut -d'"' -f 4)
+    echo "AMI Name of the uploaded image: $AMI"
+    echo "AMI ID of the uploaded image: $AMI_ID"    
 
     # Loop and check when the upload process has completed
     # TODO: Check if upload failed and exit script
@@ -86,22 +87,32 @@ upload_image() {
     done
 
     # Apply to Terraform, should also build a .tf file with the new AMI uploaded
-    VULN_PATH="./vulnerable_machines/$SEARCH_MACHINE"
+    if [[ $FILE_NAME =~ "." ]]
+    then
+	FILE_NAME=$NOOVA_NAME
+    fi
+    
+    VULN_PATH="./vulnerable_machines/$FILE_NAME"    
     SUFFIX=".tf"
     FINAL_PATH="$VULN_PATH$SUFFIX"
     echo -n """
 # A Vulnhub machine on the network
-resource \"aws_instance\" \"$SEARCH_MACHINE\" {
-  ami                    = \"$AMI\" # Custom AMI, uploaded using https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
+resource \"aws_instance\" \"$FILE_NAME\" {
+  ami                    = \"$AMI_ID\" # Custom AMI, uploaded using https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
   instance_type          = var.instance_type
   key_name               = \"primary\"
   subnet_id              = aws_subnet.my_subnet.id
   vpc_security_group_ids = [aws_security_group.allow_vuln.id]
 
   tags = {
-    Name = \"$SEARCH_MACHINE\"
+    Name = \"$FILE_NAME\"
   }
 }
+# Don't change the name of the output, will break Webapp :)
+output \"$FILE_NAME\" {
+  value = aws_instance.$FILE_NAME.private_ip
+}
+
 """ > $FINAL_PATH
 
     # Copy to main directory to be part of Terraform deploy
@@ -116,7 +127,7 @@ clean_up() {
     # Clean up all the files we create
     rm machine_choices.txt 2> /dev/null
     rm checksum.txt 2> /dev/null
-    rm import_ami_task.txt 2> /dev/null
+    import_ami_task.txt 2> /dev/null
 }
 
 clean_up
@@ -168,9 +179,9 @@ do
 	    echo "What file do you want to import?"
 	    echo -n "> "
 	    read IMPORT_FILE </dev/tty
+	    IMPORT_NAME=$(echo $IMPORT_FILE | cut -d'.' -f 1)	    
 	    IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
-	    upload_image $IMPORT_FILE $IMPORT_FILE_TYPE
-
+	    upload_image $IMPORT_FILE $IMPORT_FILE_TYPE $IMPORT_NAME
 	    
 	    # If the user chose to search, then begin search functionality
 	elif [[ $SELECTED_MACHINE =~ "Search" ]]
@@ -234,7 +245,7 @@ do
 	    fi
 
 	    # upload the image to AWS
-	    upload_image $FILE_NAME $FILE_TYPE
+	    upload_image $FILE_NAME $FILE_TYPE 
 
 	else
 	    cp vulnerable_machines/$SELECTED_MACHINE.tf .
@@ -244,7 +255,7 @@ do
 done < machine_choices.txt
 
 # Select the SSH keypair to use with this lab
-echo "What is the path to the SSH private key to use with this lab?"
+echo "What is the absolute path to the SSH private key to use with this lab?"
 echo -n "> "
 read SSH_PRIV_KEY_PATH
 
@@ -257,7 +268,7 @@ then
     exit 1
 fi
 
-echo "What is the path to the SSH public key to use with this lab?"
+echo "What is the absolute path to the SSH public key to use with this lab?"
 echo -n "> "
 read SSH_PUB_KEY_PATH
 
@@ -270,13 +281,12 @@ then
     exit 1
 fi
 
-export TF_VAR_private_key_path=$SSH_PRIV_KEY_PATH
-export TF_VAR_public_key_path=$SSH_PUB_KEY_PATH
-
+# export TF_VAR_private_key_path=$SSH_PRIV_KEY_PATH
+# export TF_VAR_public_key_path=$SSH_PUB_KEY_PATH
 
 echo "Building machine now..."
 
-terraform apply
+terraform apply -var="private_key_path=$SSH_PRIV_KEY_PATH" -var="public_key_path=$SSH_PUB_KEY_PATH"
 
 if [[ $? -eq 0 ]]
 then
