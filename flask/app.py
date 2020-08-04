@@ -15,7 +15,7 @@ def index():
 
     # Find the vulnerable machine
     for machine_name in data:
-        if "Vulnhub" in machine_name:
+        if machine_name != 'Kali' and machine_name != 'PiVPN':
             mini_list = [machine_name, data[machine_name].get('value')]
             vulns.append(mini_list)
 
