@@ -1,4 +1,12 @@
 # Vars to have less redundacy
+variable "private_key_path" {
+  description = "Absolute path to the private key"
+}
+
+variable "public_key_path" {
+  description = "Absolute path to the public key"
+}
+
 variable "cidr_vpc" {
   description = "CIDR block for the VPC"
   default     = "10.0.0.0/16"
