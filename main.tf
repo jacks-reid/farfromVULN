@@ -51,7 +51,7 @@ resource "aws_key_pair" "primary-key" {
 
 # Don't change the name of the output, will break Webapp :)
 output "Kali" {
-  value = aws_instance.primary_vpn.private_ip
+  value = aws_instance.kali-machine.private_ip
 }
 
 
