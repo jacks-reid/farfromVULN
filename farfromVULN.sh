@@ -43,7 +43,7 @@ upload_image() {
     read IMG_UPLOAD_USER </dev/tty
     
     # Import image based on type of file it is
-    # TODO: Add name tags
+    # TODO: Add name tags, specify region
     aws ec2 import-image --disk-containers Format=$FILE_TYPE,UserBucket="{S3Bucket=vmstorage,S3Key=$FILE_NAME}" --profile $IMG_UPLOAD_USER --region us-east-2 > import_ami_task.txt
 
     # Get the AMI ID of the image
@@ -300,9 +300,9 @@ then
     
     # Get the public IP of the PiVPN server
     VPN_PUB_IP=$(grep -A 3 PiVPN instance_ips.txt | grep value | cut -d"\"" -f 4)
-    # Give the web app the correct VPC private ips
     
-    echo yes | scp  -i "~/.ssh/labs-key.pem" instance_ips.txt ubuntu@$VPN_PUB_IP:/home/ubuntu/
+    # Give the web app the correct VPC private ips
+    echo yes | scp  -i "~/.ssh/labs-key.pem" instance_ips.txt ubuntu@$VPN_PUB_IP:/home/ubuntu/ 
 
     # Start the web app! Hosted on port 7894
     echo "Now starting web application..."
