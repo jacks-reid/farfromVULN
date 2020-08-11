@@ -367,7 +367,7 @@ destroy() {
 
 banner() {
     clean_up
-    echo -e "${MAGENTA}${BOLD}Welcome to farfromVULN"
+    echo -e "${MAGENTA}${BOLD}farfromVULN"
     cat farfromVULN.logo
 } # banner
 
