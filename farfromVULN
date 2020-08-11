@@ -8,11 +8,42 @@ NORMAL='\e[21m'
 RED='\e[91m'
 EXIT='echo -e \e[91m\e[1m'
 
+usage() {
+    PROGRAMNAME=$0
+    echo "usage: $PROGRAMNAME [command]"
+    echo "Available Commands:"
+    echo "  deploy      build cloud lab environment with Vulnhub machines"
+    echo "  status      check status of cloud lab environment"
+    echo "  destroy     destroy the cloud lab environment"
+    exit 1
+} # usage
+
+set_aws_profiles() {
+    # Select the AWS profiles to use with the lab
+    # First check to see if the ssh keypair has been declared as an environmental variable
+    if [[ -z $FFV_S3_PROFILE || -z $FFV_AMI_PROFILE ]] # if either private or public has not been declared...
+    then
+	# Then the keypair needs to be declared...
+	echo "What is the AWS profile with S3 permission?"
+	echo -n "> "
+	read S3_USER </dev/tty
+
+	echo "What is the AWS profile with AMI upload permissions?"
+	echo -n "> "
+	read IMG_UPLOAD_USER </dev/tty
+
+    else
+	S3_USER=$FFV_S3_PROFILE
+	IMG_UPLOAD_USER=$FFV_AMI_PROFILE
+    fi    
+} # set_aws_profiles
+
 upload_image() {
     # Get function arguments
     FILE_NAME=$1
     FILE_TYPE=$2
     NOOVA_NAME=$3
+    LOCATION=$4
 
     # Upload process begins here
     # Get file type
@@ -21,36 +52,26 @@ upload_image() {
     fi
     echo "File type detected: $FILE_TYPE"
 
-
-    echo "Enter AWS profile with S3 Bucket permissions: "
-    echo -n "> "
-    read S3_USER </dev/tty
-    
-
-    echo "Uploading to AWS..."
-    aws s3 cp vulnhub_ovas/$FILE_NAME s3://vmstorage/ --profile $S3_USER
-
-    # Check if upload cancelled, and if so, exit program
-    if [[ $? -eq 1 ]]
+    if [[ $LOCATION -eq 0 ]]
     then
-	clean_up
-	echo "Upload failed. Exiting now..."
-	exit 1
+	echo "Uploading to AWS..."
+	aws s3 cp vulnhub_ovas/$FILE_NAME s3://vmstorage/ --profile $S3_USER
+
+	# Check if upload cancelled, and if so, exit program
+	if [[ $? -eq 1 ]]
+	then
+	    clean_up
+	    echo "Upload failed. Exiting now..."
+	    exit 1
+	fi
     fi
 
-    echo "Enter AWS profile with Image Upload permissions: "
-    echo -n "> "
-    read IMG_UPLOAD_USER </dev/tty
-    
     # Import image based on type of file it is
     # TODO: Add name tags, specify region
     aws ec2 import-image --disk-containers Format=$FILE_TYPE,UserBucket="{S3Bucket=vmstorage,S3Key=$FILE_NAME}" --profile $IMG_UPLOAD_USER --region us-east-2 > import_ami_task.txt
 
-    # Get the AMI ID of the image
-    AMI=$(grep import import_ami_task.txt | cut -d'"' -f 4)
-    AMI_ID=$(grep ImageId | cut -d'"' -f 4)
-    echo "AMI Name of the uploaded image: $AMI"
-    echo "AMI ID of the uploaded image: $AMI_ID"    
+    AMI_TASK_ID=$(grep import import_ami_task.txt | cut -d'"' -f 4)
+    echo "AMI_TASK_ID ID of the uploaded image: $AMI_TASK_ID"        
 
     # Loop and check when the upload process has completed
     # TODO: Check if upload failed and exit script
@@ -62,7 +83,7 @@ upload_image() {
 	echo "Checking for completion on image upload...  [ $DURATION seconds elapsed ]" 
 	sleep 30
 
-	aws ec2 describe-import-image-tasks --import-task-ids $AMI > import_ami_task.txt
+	aws ec2 describe-import-image-tasks --import-task-ids $AMI_TASK_ID > import_ami_task.txt
 	
 	# Check for failure
 	FAILURE=$(grep deleting ./import_ami_task.txt | wc -l)
@@ -91,6 +112,10 @@ upload_image() {
     then
 	FILE_NAME=$NOOVA_NAME
     fi
+
+    # Get the AMI ID of the image
+    AMI_ID=$(grep ImageId import_ami_task.txt | cut -d'"' -f 4)
+    echo "AMI Name of the uploaded image: $AMI_ID"
     
     VULN_PATH="./vulnerable_machines/$FILE_NAME"    
     SUFFIX=".tf"
@@ -120,196 +145,251 @@ output \"$FILE_NAME\" {
 
     echo "Vulnhub image successfully uploaded to AWS and ready for deployment!"
     
-}
+} # upload_image
 
 clean_up() {
     ${EXIT}
     # Clean up all the files we create
     rm machine_choices.txt 2> /dev/null
     rm checksum.txt 2> /dev/null
-    import_ami_task.txt 2> /dev/null
-}
+    rm import_ami_task.txt 2> /dev/null
+} # clean_up
 
-clean_up
-
-clear
-
-echo -e "${MAGENTA}${BOLD}Welcome to farfromVULN"
-
-cat farfromVULN.logo
-
-# Pick a vulnhub machine to deploy
-COUNTER=0
-MACHINES=$(find ./vulnerable_machines/ | cut -d'/' -f 3)
-echo "Pick a Vulnhub machine to deploy:"
-for MACHINE in $MACHINES
-do
-    MACHINE=$(echo $MACHINE | cut -d'.' -f 1)
+deploy() {
+    # Pick a vulnhub machine to deploy
+    COUNTER=0
+    MACHINES=$(find ./vulnerable_machines/ | cut -d'/' -f 3)
+    echo "Pick a Vulnhub machine to deploy:"
+    for MACHINE in $MACHINES
+    do
+	MACHINE=$(echo $MACHINE | cut -d'.' -f 1)
+	COUNTER=$((COUNTER+1))
+	echo "($COUNTER) $MACHINE"
+	echo "$COUNTER.$MACHINE" >> machine_choices.txt
+    done
     COUNTER=$((COUNTER+1))
-    echo "($COUNTER) $MACHINE"
-    echo "$COUNTER.$MACHINE" >> machine_choices.txt
-done
-COUNTER=$((COUNTER+1))
-echo "($COUNTER) Search remotely for Vulnhub machine *UNSTABLE*"
-echo "$COUNTER.Search" >> machine_choices.txt
+    echo "($COUNTER) Search remotely for Vulnhub machine *UNSTABLE*"
+    echo "$COUNTER.Search" >> machine_choices.txt
 
-COUNTER=$((COUNTER+1))
-echo "($COUNTER) Import local Vulnhub image"
-echo "$COUNTER.Import" >> machine_choices.txt
+    COUNTER=$((COUNTER+1))
+    echo "($COUNTER) Import local Vulnhub image"
+    echo "$COUNTER.Import" >> machine_choices.txt
 
-# Default color and font
-echo -e "${NORMAL}${NC}"
+    COUNTER=$((COUNTER+1))
+    echo "($COUNTER) Import remote Vulnhub image from AWS S3 bucket"
+    echo "$COUNTER.S3" >> machine_choices.txt    
 
-# read in the choice
-echo -n "> "
-read VULN_CHOICE
+    # Default color and font
+    echo -e "${NORMAL}${NC}"
 
-# Loop through and find the machine the user selected
-while IFS= read -r line;
-do
-    NUM=$(echo $line | cut -d'.' -f 1)
-    if [[ $VULN_CHOICE =~ $NUM ]]
-    then
-	SELECTED_MACHINE=$(echo $line | cut -d'.' -f 2)
+    # read in the choice
+    echo -n "> "
+    read VULN_CHOICE
 
-	# TODO: Add import functionality
-	# To import an image, store the image in ./vulnhub_ovas/ directory
-	if [[ $SELECTED_MACHINE =~ "Import" ]]
+    # Loop through and find the machine the user selected
+    while IFS= read -r line;
+    do
+	NUM=$(echo $line | cut -d'.' -f 1)
+	if [[ $VULN_CHOICE =~ $NUM ]]
 	then
-	    echo "What file do you want to import?"
-	    echo -n "> "
-	    read IMPORT_FILE </dev/tty
-	    IMPORT_NAME=$(echo $IMPORT_FILE | cut -d'.' -f 1)	    
-	    IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
-	    upload_image $IMPORT_FILE $IMPORT_FILE_TYPE $IMPORT_NAME
-	    
-	    # If the user chose to search, then begin search functionality
-	elif [[ $SELECTED_MACHINE =~ "Search" ]]
-	then
-	    echo -n "Vulnhub machine to search for: "
-	    read SEARCH_MACHINE </dev/tty
-	    wget -q https://download.vulnhub.com/checksum.txt
-	    VAL=$(grep -i -m 1 $SEARCH_MACHINE checksum.txt | cut -d' ' -f 3)
-	    CHECKSUM=$(grep -i -m 1 $SEARCH_MACHINE checksum.txt | cut -d' ' -f 1)	    
-	    FILE_NAME=$(echo "$VAL" | rev | cut -d'/' -f 1 | rev)
-	    VAL2="https://download.vulnhub.com/"
-	    VAL3="$VAL2$VAL"
-	    echo "Found file at $VAL3"
+	    SELECTED_MACHINE=$(echo $line | cut -d'.' -f 2)
 
-	    wget --spider $VAL3
-	    echo "Are you sure you want to download this file? (y/n)"
-	    echo -n "> "
-	    read confirm </dev/tty
-	    if [[ $confirm = "y" ]]
+	    # TODO: Add import functionality
+	    # To import an image, store the image in ./vulnhub_ovas/ directory
+	    if [[ $SELECTED_MACHINE =~ "Import" ]]
 	    then
-		rm checksum.txt
-		echo "Retrieving file..."
-		wget --directory-prefix=./vulnhub_ovas/ $VAL3
+		echo "What file do you want to import?"
+		echo -n "> "
+		read IMPORT_FILE </dev/tty
+		IMPORT_NAME=$(echo $IMPORT_FILE | cut -d'.' -f 1)	    
+		IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
+		upload_image $IMPORT_FILE $IMPORT_FILE_TYPE $IMPORT_NAME 0
+	    elif [[ $SELECTED_MACHINE =~ "S3" ]]
+	    then
+		set_aws_profiles
+		echo "Listing contents of s://vmstorage/ ..."
+		aws s3 ls s3://vmstorage/ --profile $S3_USER | grep ova | cut -d" " -f 4
+		echo "What file do you want to import?"
+		echo -n "> "
+		read IMPORT_FILE </dev/tty
+		IMPORT_NAME=$(echo $IMPORT_FILE | cut -d'.' -f 1)	    
+		IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)		
+		upload_image $IMPORT_FILE $IMPORT_FILE_TYPE $IMPORT_NAME 1		
+	    # If the user chose to search, then begin search functionality
+	    elif [[ $SELECTED_MACHINE =~ "Search" ]]
+	    then
+		echo -n "Vulnhub machine to search for: "
+		read SEARCH_MACHINE </dev/tty
+		wget -q https://download.vulnhub.com/checksum.txt
+		VAL=$(grep -i -m 1 $SEARCH_MACHINE checksum.txt | cut -d' ' -f 3)
+		CHECKSUM=$(grep -i -m 1 $SEARCH_MACHINE checksum.txt | cut -d' ' -f 1)	    
+		FILE_NAME=$(echo "$VAL" | rev | cut -d'/' -f 1 | rev)
+		VAL2="https://download.vulnhub.com/"
+		VAL3="$VAL2$VAL"
+		echo "Found file at $VAL3"
 
-		# Confirm successful download with checksum		
-		COMPARE=$(md5sum ./vulnhub_ovas/$FILE_NAME | cut -d' ' -f 1)		
-		echo "COMPARE: $COMPARE"
-		echo "CHECKSUM: $CHECKSUM"
-
-		if [[ $COMPARE != $CHECKSUM ]]
+		wget --spider $VAL3
+		echo "Are you sure you want to download this file? (y/n)"
+		echo -n "> "
+		read confirm </dev/tty
+		if [[ $confirm = "y" ]]
 		then
-		    echo "ERROR: Downloaded file did not match download checksum. Exiting now and removing the downloaded file."
-		    rm ./vulnhub_ovas/$FILE_NAME
-		    clean_up
-		    exit 1
-		fi
-		
-		# TODO: Account for different compression file types
-		# Regex check to see if its a zip file
-		if [[ $FILE_NAME =~ "zip" ]];
-		then
-		    unzip ./vulnhub_ovas/$FILE_NAME -d ./vulnhub_ovas/
-		    # From here we need to regex and find a compatible file type,
-		    # then set that file type as the new file name for upload
-		    FILE_NAME=$(find ./vulnhub_ovas | grep -E "ova|vmdk" -m 1)
+		    rm checksum.txt
+		    echo "Retrieving file..."
+		    wget --directory-prefix=./vulnhub_ovas/ $VAL3
 
-		    # If no ova or vmdk file is found, then exit the importation process
-		    if [[ $FILE_NAME == "./vulnhub_ovas" ]]
+		    # Confirm successful download with checksum		
+		    COMPARE=$(md5sum ./vulnhub_ovas/$FILE_NAME | cut -d' ' -f 1)		
+		    echo "COMPARE: $COMPARE"
+		    echo "CHECKSUM: $CHECKSUM"
+
+		    if [[ $COMPARE != $CHECKSUM ]]
 		    then
-			clean_up			
-			echo "The file is not in a compatible file format and cannot be imported in AWS. Exiting now."
+			echo "ERROR: Downloaded file did not match download checksum. Exiting now and removing the downloaded file."
+			rm ./vulnhub_ovas/$FILE_NAME
+			clean_up
 			exit 1
 		    fi
-		    FILE_TYPE=$(echo $FILE_NAME | cut -d'.' -f 3)	    
+		    
+		    # TODO: Account for different compression file types
+		    # Regex check to see if its a zip file
+		    if [[ $FILE_NAME =~ "zip" ]];
+		    then
+			unzip ./vulnhub_ovas/$FILE_NAME -d ./vulnhub_ovas/
+			# From here we need to regex and find a compatible file type,
+			# then set that file type as the new file name for upload
+			FILE_NAME=$(find ./vulnhub_ovas | grep -E "ova|vmdk" -m 1)
+
+			# If no ova or vmdk file is found, then exit the importation process
+			if [[ $FILE_NAME == "./vulnhub_ovas" ]]
+			then
+			    clean_up			
+			    echo "The file is not in a compatible file format and cannot be imported in AWS. Exiting now."
+			    exit 1
+			fi
+			FILE_TYPE=$(echo $FILE_NAME | cut -d'.' -f 3)	    
+		    fi
+		elif [[ $confirm = "n" ]]
+		then
+		    clean_up
+		    echo "bye!"
+		    exit 1
 		fi
-	    elif [[ $confirm = "n" ]]
-	    then
-		clean_up
-		echo "bye!"
-		exit 1
+
+		# upload the image to AWS
+		set_aws_profiles
+		
+		# upload_image $FILE_NAME $FILE_TYPE
+		IMPORT_NAME=$(echo $IMPORT_FILE | cut -d'.' -f 1)	    
+		IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
+		upload_image $FILE_NAME $FILE_TYPE $FILE_NAME 0		
+
+	    else
+		cp vulnerable_machines/$SELECTED_MACHINE.tf .
+		echo "Adding $SELECTED_MACHINE to lab build..."
 	    fi
-
-	    # upload the image to AWS
-	    upload_image $FILE_NAME $FILE_TYPE 
-
-	else
-	    cp vulnerable_machines/$SELECTED_MACHINE.tf .
-	    echo "Adding $SELECTED_MACHINE to lab build..."
 	fi
-    fi
-done < machine_choices.txt
+    done < machine_choices.txt
 
-# Select the SSH keypair to use with this lab
-# First check to see if the ssh keypair has been declared as an environmental variable
-if [[ -z $FFV_PRIV_KEY || -z $FFV_PUB_KEY ]] # if either private or public has not been declared...
-then
-    # Then the keypair needs to be declared...
-    echo "What is the absolute path to the SSH private key to use with this lab?"
-    echo -n "> "
-    read SSH_PRIV_KEY_PATH
-
-    # Test to see if that file exists and is a valid SSH key
-    ssh-keygen -l -f $SSH_PRIV_KEY_PATH
-    if [[ $? -ne 0 ]]
+    # Select the SSH keypair to use with this lab
+    # First check to see if the ssh keypair has been declared as an environmental variable
+    if [[ -z $FFV_PRIV_KEY || -z $FFV_PUB_KEY ]] # if either private or public has not been declared...
     then
+	# Then the keypair needs to be declared...
+	echo "What is the absolute path to the SSH private key to use with this lab?"
+	echo -n "> "
+	read SSH_PRIV_KEY_PATH
+
+	# Test to see if that file exists and is a valid SSH key
+	ssh-keygen -l -f $SSH_PRIV_KEY_PATH
+	if [[ $? -ne 0 ]]
+	then
+	    clean_up
+	    echo "Exiting now..."
+	    exit 1
+	fi
+
+
+	echo "What is the absolute path to the SSH public key to use with this lab?"
+	echo -n "> "
+	read SSH_PUB_KEY_PATH
+
+	# Test to see if that file exists and is a valid SSH key
+	ssh-keygen -l -f $SSH_PUB_KEY_PATH
+	if [[ $? -ne 0 ]]
+	then
+	    clean_up
+	    echo "Exiting now..."
+	    exit 1
+	fi
+    else
+	SSH_PRIV_KEY_PATH=$FFV_PRIV_KEY
+	SSH_PUB_KEY_PATH=$FFV_PUB_KEY    
+    fi    
+
+    echo "Building machine now..."
+
+    terraform apply -var="private_key_path=$SSH_PRIV_KEY_PATH" -var="public_key_path=$SSH_PUB_KEY_PATH"
+
+    if [[ $? -eq 0 ]]
+    then
+	terraform output -json > instance_ips.txt
+	
+	# Get the public IP of the PiVPN server
+	VPN_PUB_IP=$(grep -A 3 PiVPN instance_ips.txt | grep value | cut -d"\"" -f 4)
+	
+	# Give the web app the correct VPC private ips
+	echo yes | scp  -i "~/.ssh/labs-key.pem" instance_ips.txt ubuntu@$VPN_PUB_IP:/home/ubuntu/ 
+
+	# Start the web app! Hosted on port 7894
+	echo "Now starting web application..."
+	ssh -i "~/.ssh/labs-key.pem" ubuntu@$VPN_PUB_IP "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894"
+    else
 	clean_up
-	echo "Exiting now..."
+	echo "Terraform deployment failed. Now exiting..."
 	exit 1
     fi
+} # deploy
 
+status() {
+    terraform show
+} # status
 
-    echo "What is the absolute path to the SSH public key to use with this lab?"
-    echo -n "> "
-    read SSH_PUB_KEY_PATH
-
-    # Test to see if that file exists and is a valid SSH key
-    ssh-keygen -l -f $SSH_PUB_KEY_PATH
-    if [[ $? -ne 0 ]]
+destroy() {
+    terraform destroy
+    if [[ $? -eq 0 ]]
     then
 	clean_up
-	echo "Exiting now..."
-	exit 1
+	VULNS=$(find . | grep tf | grep -v -E 'vulnerable_machines|tfstate|main|vars|env|vpn|provider')
+	rm $VULNS
     fi
-else
-    SSH_PRIV_KEY_PATH=$FFV_PRIV_KEY
-    SSH_PUB_KEY_PATH=$FFV_PUB_KEY    
-fi
+} # destroy
 
-echo "Building machine now..."
-
-terraform apply -var="private_key_path=$SSH_PRIV_KEY_PATH" -var="public_key_path=$SSH_PUB_KEY_PATH"
-
-if [[ $? -eq 0 ]]
-then
-    terraform output -json > instance_ips.txt
-    
-    # Get the public IP of the PiVPN server
-    VPN_PUB_IP=$(grep -A 3 PiVPN instance_ips.txt | grep value | cut -d"\"" -f 4)
-    
-    # Give the web app the correct VPC private ips
-    echo yes | scp  -i "~/.ssh/labs-key.pem" instance_ips.txt ubuntu@$VPN_PUB_IP:/home/ubuntu/ 
-
-    # Start the web app! Hosted on port 7894
-    echo "Now starting web application..."
-    ssh -i "~/.ssh/labs-key.pem" ubuntu@$VPN_PUB_IP "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894"
-else
+banner() {
     clean_up
-    echo "Terraform deployment failed. Now exiting..."
-    exit 1
+    echo -e "${MAGENTA}${BOLD}Welcome to farfromVULN"
+    cat farfromVULN.logo
+} # banner
+
+
+# Check command line arguments
+if [[ -z $1 ]]
+then
+    usage
+elif [[ $1 == "deploy" ]]
+then
+    banner
+    deploy
+elif [[ $1 == "status" ]]
+then
+    banner
+    status
+elif [[ $1 == "destroy" ]]
+then
+    banner
+    destroy    
 fi
+
+
+
 
