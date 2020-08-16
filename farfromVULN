@@ -322,7 +322,7 @@ output \"$AMI_CHOICE\" {
 provider \"aws\" {
     region = \"$AWS_REGION\"
 }	 
-    """ > provider.tf
+""" > provider.tf
 
     echo "Building machine now..."
 
