@@ -1,28 +1,20 @@
-# scs-labs-aws
+# farfromVULN
 
-This repository contains Terraform files to automate the creation of a lab environment in AWS. Currently, Terraform will create a virtual private cloud and create an EC2 instance with a Kali Linux on it. A setup file then downloads the Metasploit Framework onto Kali.
+`farfromVULN` is a tool to help quickly spin up an AWS private cloud with Vulnhub machines and a Kali box for pentesting training. `farfromVULN` helps eliminate the need for local hardware to host Vulnhub boxes on your home network. The script creates an environment where the Vulnhub boxes cannot access the Internet, only other machines within the virtual private cloud.
 
-To make it work for you, you will need to change the ssh keys used in the `main.tf` file.
+## Using `farfromVULN`
 
-## Using Terraform
+The script can be split into 3 different parts:
 
-Terraform can be split into 3 different commands.
-
-- `terraform init`: load provider modules
-- `terraform plan`: plan the deploy, check syntax, etc
-- `terraform apply`: deploy
-
-### Resources
-- https://www.terraform.io/intro/index.html
-- https://www.terraform.io/docs/providers/aws/index.html
+- `./farfromVULN deploy`: build cloud lab environment with Vulnhub machines
+- `./farfromVULN status`: check status of cloud lab environment
+- `./farfromVULN destroy`: destroy the cloud lab environment
 
 ## Set-Up
 
-You'll need to create your own AWS account and get API access tokens. Store those tokens in your `~/.aws/credentials` file and Terraform will automatically detect and use them. You will also need to subscribe to the Kali Linux AMI in the AWS Marketplace (free of charge).
+You'll need to create your own AWS account and get API access tokens. Store those tokens in your `~/.aws/credentials` file and `farfromVULN` will automatically detect and use them. You will also need to subscribe to the Kali Linux AMI in the AWS Marketplace (free of charge).
 
-- https://www.terraform.io/intro/index.html
-
-I did my best to stay within AWS's free tier requirements. Based on my experience it is free of charge, but don't take my word for it. Set up billing alerts, learn about free tier limits, and save yourself from an unpleasant bill.
+`farfromVULN` does its best to stay within AWS's free tier requirements. Throughout all the testing, I have never been charged more than $5 a month. Set up billing alerts, learn about free tier limits, and save yourself from an unpleasant bill.
 
 In addition, you will need to subscribe to Offensive Security's custom Kali Linux image.
 
@@ -30,36 +22,9 @@ In addition, you will need to subscribe to Offensive Security's custom Kali Linu
 
 ## Usage
 
-Run the `./farfromVULN` start script and choose the correct options to set up the Vulnhub box of your choice. Once completed, `ssh` into the primary vpn set up and either: (1) create vpn profiles using `pivpn` or (2) use `export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p my_port_number` to open up a web server on the VPN public IP that can be used to distribute VPN profiles to a group.
+Run the `./farfromVULN` start script and choose the correct options to set up the Vulnhub box of your choice. Once completed, visit the public IP of the VPN on port 7894 to get the VPN webpage. Visit http://my_vpn_ip:7984/some_name_here to download a VPN profile and connect to the virtual lab network. From here you will be able to connect to cloud lab environment and access the private IPs of the machines.
 
-## TO DO:
-
-- Add fancy colors
-- ~~Add in VPN capabilities to the VPC~~
-  - ~~Add in PiVPN installation automation~~
-  - ~~Add in PiVPN VPN profile creation and distribution automation~~
-  - Allow Kali ssh server password logins (needs to be manual)
-- ~~Automate the creation of Kali profiles when a VPN profile is created~~
-  - ~~With appropriate shell, homedir, etc~~
-  - May need to look into solutions such as SaltStack, for a later version
-- ~~Allow traffic to Kali only from VPN~~
-- ~~Add in pwnable machines in the cloud~~
-  - ~~Add image file checksum verification~~
-  - ~~Configure appropriate level of traffic outwards from vulnerable machines~~
-  - ~~Automate the Vulnhub image AMI upload process~~
-    - ~~Have automatic detection of Vulnhub tf files in `vulnerable_machines` directory to be added as options in start script~~
-    - ~~Refine AMI upload process~~
-    - Add in different decompression processes
-    - ~~Implement local file upload~~
-- ~~Clean up Flask server~~
-  - Possibly use uWSGI server for long term solution
-  - Improve Flask security
-  - ~~Implement private IP addresses shown on Flask homepage~~
-  - Implement SSL security with Let's Encrypt
-- Add AWS profile selection
-- Debug and test the platform through a variety of use cases
-- Install from start to finish from a fresh AWS account
-  - Document quick start guide
+Note that all reverse shell/call back exploits need to be done to the Kali box in the lab. The Vulnhub machines can NOT reach your local machine that is connected through the VPN.
 
 ## References
 
