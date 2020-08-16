@@ -167,9 +167,6 @@ deploy() {
 	echo "($COUNTER) $MACHINE"
 	echo "$COUNTER.$MACHINE" >> machine_choices.txt
     done
-    COUNTER=$((COUNTER+1))
-    echo "($COUNTER) Search remotely for Vulnhub machine *UNSTABLE*"
-    echo "$COUNTER.Search" >> machine_choices.txt
 
     COUNTER=$((COUNTER+1))
     echo "($COUNTER) Import local Vulnhub image"
@@ -259,79 +256,6 @@ output \"$AMI_CHOICE\" {
 		cp $FINAL_PATH .
 
 		echo "Ready to deploy AMI $AMI_CHOICE!"
-		
-	    # If the user chose to search, then begin search functionality
-	    elif [[ $SELECTED_MACHINE =~ "Search" ]]
-	    then
-		echo -n "Vulnhub machine to search for: "
-		read SEARCH_MACHINE </dev/tty
-		wget -q https://download.vulnhub.com/checksum.txt
-		VAL=$(grep -i -m 1 $SEARCH_MACHINE checksum.txt | cut -d' ' -f 3)
-		CHECKSUM=$(grep -i -m 1 $SEARCH_MACHINE checksum.txt | cut -d' ' -f 1)	    
-		FILE_NAME=$(echo "$VAL" | rev | cut -d'/' -f 1 | rev)
-		VAL2="https://download.vulnhub.com/"
-		VAL3="$VAL2$VAL"
-		echo "Found file at $VAL3"
-
-		wget --spider $VAL3
-		echo "Are you sure you want to download this file? (y/n)"
-		echo -n "> "
-		read confirm </dev/tty
-		if [[ $confirm = "y" ]]
-		then
-		    rm checksum.txt
-		    echo "Retrieving file..."
-		    wget --directory-prefix=./vulnhub_ovas/ $VAL3
-
-		    # Confirm successful download with checksum		
-		    COMPARE=$(md5sum ./vulnhub_ovas/$FILE_NAME | cut -d' ' -f 1)		
-		    echo "COMPARE: $COMPARE"
-		    echo "CHECKSUM: $CHECKSUM"
-
-		    if [[ $COMPARE != $CHECKSUM ]]
-		    then
-			echo "ERROR: Downloaded file did not match download checksum. Exiting now and removing the downloaded file."
-			rm ./vulnhub_ovas/$FILE_NAME
-			clean_up
-			exit 1
-		    fi
-		    
-		    # TODO: Account for different compression file types
-		    # Regex check to see if its a zip file
-		    if [[ $FILE_NAME =~ "zip" ]];
-		    then
-			unzip ./vulnhub_ovas/$FILE_NAME -d ./vulnhub_ovas/
-			# From here we need to regex and find a compatible file type,
-			# then set that file type as the new file name for upload
-			FILE_NAME=$(find ./vulnhub_ovas | grep -E "ova|vmdk" -m 1)
-
-			# If no ova or vmdk file is found, then exit the importation process
-			if [[ $FILE_NAME == "./vulnhub_ovas" ]]
-			then
-			    clean_up			
-			    echo "The file is not in a compatible file format and cannot be imported in AWS. Exiting now."
-			    exit 1
-			fi
-			FILE_TYPE=$(echo $FILE_NAME | cut -d'.' -f 3)	    
-		    fi
-		elif [[ $confirm = "n" ]]
-		then
-		    clean_up
-		    echo "bye!"
-		    exit 1
-		fi
-
-		# upload the image to AWS
-		set_aws_profiles
-		
-		# upload_image $FILE_NAME $FILE_TYPE
-		IMPORT_NAME=$(echo $IMPORT_FILE | cut -d'.' -f 1)	    
-		IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
-		upload_image $FILE_NAME $FILE_TYPE $FILE_NAME 0		
-
-	    else
-		cp vulnerable_machines/$SELECTED_MACHINE.tf .
-		echo "Adding $SELECTED_MACHINE to lab build..."
 	    fi
 	fi
     done < machine_choices.txt
