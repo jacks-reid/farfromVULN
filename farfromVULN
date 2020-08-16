@@ -176,6 +176,11 @@ deploy() {
     for MACHINE in $MACHINES
     do
 	MACHINE=$(echo $MACHINE | cut -d'.' -f 1)
+	if [[ -z "$MACHINE" ]]
+	then
+	    continue
+	fi
+	
 	COUNTER=$((COUNTER+1))
 	echo "($COUNTER) $MACHINE"
 	echo "$COUNTER.$MACHINE" >> machine_choices.txt
