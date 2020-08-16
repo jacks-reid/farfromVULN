@@ -229,7 +229,7 @@ deploy() {
 	    then
 		set_aws_profiles
 		set_aws_region		
-		echo "Listing contents of s://vmstorage/ ..."
+		echo "Listing contents of s3://vmstorage/ ..."
 		aws s3 ls s3://vmstorage/ --profile $S3_USER | grep ova | cut -d" " -f 4
 		echo "What file do you want to import?"
 		echo -n "> "
@@ -292,7 +292,7 @@ output \"$AMI_CHOICE\" {
 	# Then the keypair needs to be declared...
 	echo "What is the absolute path to the SSH private key to use with this lab?"
 	echo -n "> "
-	read SSH_PRIV_KEY_PATH
+	read SSH_PRIV_KEY_PATH </dev/tty
 
 	# Test to see if that file exists and is a valid SSH key
 	ssh-keygen -l -f $SSH_PRIV_KEY_PATH
@@ -306,7 +306,7 @@ output \"$AMI_CHOICE\" {
 
 	echo "What is the absolute path to the SSH public key to use with this lab?"
 	echo -n "> "
-	read SSH_PUB_KEY_PATH
+	read SSH_PUB_KEY_PATH </dev/tty
 
 	# Test to see if that file exists and is a valid SSH key
 	ssh-keygen -l -f $SSH_PUB_KEY_PATH
