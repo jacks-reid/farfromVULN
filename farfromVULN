@@ -341,11 +341,11 @@ provider \"aws\" {
 	VPN_PUB_IP=$(grep -A 3 PiVPN instance_ips.txt | grep value | cut -d"\"" -f 4)
 	
 	# Give the web app the correct VPC private ips
-	echo yes | scp  -i "~/.ssh/labs-key.pem" instance_ips.txt ubuntu@$VPN_PUB_IP:/home/ubuntu/ 
+	echo yes | scp  -i "$SSH_PRIV_KEY_PATH" instance_ips.txt ubuntu@$VPN_PUB_IP:/home/ubuntu/ 
 
 	# Start the web app! Hosted on port 7894
 	echo "Now starting web application..."
-	ssh -i "~/.ssh/labs-key.pem" ubuntu@$VPN_PUB_IP "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894"
+	ssh -i "$SSH_PRIV_KEY_PATH" ubuntu@$VPN_PUB_IP "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894"
     else
 	clean_up
 	echo "Terraform deployment failed. Now exiting..."
