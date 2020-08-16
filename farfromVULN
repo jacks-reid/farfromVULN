@@ -20,10 +20,8 @@ usage() {
 
 set_aws_profiles() {
     # Select the AWS profiles to use with the lab
-    # First check to see if the ssh keypair has been declared as an environmental variable
-    if [[ -z $FFV_S3_PROFILE || -z $FFV_AMI_PROFILE ]] # if either private or public has not been declared...
+    if [[ -z $FFV_S3_PROFILE || -z $FFV_AMI_PROFILE ]] 
     then
-	# Then the keypair needs to be declared...
 	echo "What is the AWS profile with S3 permission?"
 	echo -n "> "
 	read S3_USER </dev/tty
@@ -35,8 +33,23 @@ set_aws_profiles() {
     else
 	S3_USER=$FFV_S3_PROFILE
 	IMG_UPLOAD_USER=$FFV_AMI_PROFILE
-    fi    
+    fi
+
+
 } # set_aws_profiles
+
+set_aws_region() {
+    # Select AWS region
+    if [[ -z $FFV_REGION ]]
+    then
+	echo "What AWS region should the lab be deployed in?"
+	aws ec2 describe-regions | grep RegionName | awk -F':' '{ sub(/^[ \t]+/, ""); print $2 }'	
+	echo -n "> "
+	read AWS_REGION </dev/tty
+    else
+	AWS_REGION=$FFV_REGION
+    fi
+} # set_aws_region
 
 upload_image() {
     # Get function arguments
@@ -68,7 +81,7 @@ upload_image() {
 
     # Import image based on type of file it is
     # TODO: Add name tags, specify region
-    aws ec2 import-image --description "$FILE_NAME" --disk-containers Format=$FILE_TYPE,UserBucket="{S3Bucket=vmstorage,S3Key=$FILE_NAME}" --profile $IMG_UPLOAD_USER --region us-east-2 > import_ami_task.txt
+    aws ec2 import-image --description "$FILE_NAME" --disk-containers Format=$FILE_TYPE,UserBucket="{S3Bucket=vmstorage,S3Key=$FILE_NAME}" --profile $IMG_UPLOAD_USER --region $AWS_REGION > import_ami_task.txt
 
     AMI_TASK_ID=$(grep import import_ami_task.txt | cut -d'"' -f 4)
     echo "AMI_TASK_ID ID of the uploaded image: $AMI_TASK_ID"        
@@ -205,10 +218,12 @@ deploy() {
 		IMPORT_NAME=$(echo $IMPORT_FILE | cut -d'.' -f 1)	    
 		IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
 		set_aws_profiles
+		set_aws_region		
 		upload_image $IMPORT_FILE $IMPORT_FILE_TYPE $IMPORT_NAME 0
 	    elif [[ $SELECTED_MACHINE =~ "S3" ]]
 	    then
 		set_aws_profiles
+		set_aws_region		
 		echo "Listing contents of s://vmstorage/ ..."
 		aws s3 ls s3://vmstorage/ --profile $S3_USER | grep ova | cut -d" " -f 4
 		echo "What file do you want to import?"
@@ -221,15 +236,16 @@ deploy() {
 	    elif [[ $SELECTED_MACHINE =~ "AMI" ]]
 	    then
 		set_aws_profiles
+		set_aws_region		
 		# List out available AMI's
 		echo "Listing available AMI's from your profile...."
-		aws ec2 describe-images --profile $IMG_UPLOAD_USER --region us-east-2 --owners self | grep "Tags" -A 5 | grep Value | cut -d"\"" -f 4
+		aws ec2 describe-images --profile $IMG_UPLOAD_USER --region $AWS_REGION --owners self | grep "Tags" -A 5 | grep Value | cut -d"\"" -f 4
 
 		# Get AMI to use
 		echo "What AMI do you want to import?"
 		echo -n "> "
 		read AMI_CHOICE </dev/tty		
-		AMI_CHOICE_IMAGEID=$(aws ec2 describe-images --profile $IMG_UPLOAD_USER --region us-east-2 --owners self | grep "$AMI_CHOICE" -B32 | grep ImageId | cut -d"\"" -f 4)
+		AMI_CHOICE_IMAGEID=$(aws ec2 describe-images --profile $IMG_UPLOAD_USER --region $AWS_REGION --owners self | grep "$AMI_CHOICE" -B32 | grep ImageId | cut -d"\"" -f 4)
 
 		FINAL_PATH="./vulnerable_machines/$AMI_CHOICE.tf"
 		echo -n """
@@ -256,6 +272,10 @@ output \"$AMI_CHOICE\" {
 		cp $FINAL_PATH .
 
 		echo "Ready to deploy AMI $AMI_CHOICE!"
+	    else
+		set_aws_region
+		cp vulnerable_machines/$SELECTED_MACHINE.tf .
+		echo "Adding $SELECTED_MACHINE to lab build..."
 	    fi
 	fi
     done < machine_choices.txt
@@ -294,7 +314,15 @@ output \"$AMI_CHOICE\" {
     else
 	SSH_PRIV_KEY_PATH=$FFV_PRIV_KEY
 	SSH_PUB_KEY_PATH=$FFV_PUB_KEY    
-    fi    
+    fi
+
+    # Create the provider.tf
+
+    echo -n """
+provider \"aws\" {
+    region = \"$AWS_REGION\"
+}	 
+    """ > provider.tf
 
     echo "Building machine now..."
 
