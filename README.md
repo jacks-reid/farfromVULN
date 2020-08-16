@@ -24,7 +24,7 @@ In addition, you will need to subscribe to Offensive Security's custom Kali Linu
 
 Run the `./farfromVULN` start script and choose the correct options to set up the Vulnhub box of your choice. Once completed, visit the public IP of the VPN on port 7894 to get the VPN webpage. Visit http://my_vpn_ip:7984/some_name_here to download a VPN profile and connect to the virtual lab network. From here you will be able to connect to cloud lab environment and access the private IPs of the machines.
 
-Note that all reverse shell/call back exploits need to be done to the Kali box in the lab. The Vulnhub machines can NOT reach your local machine that is connected through the VPN.
+Note that all reverse shell/call back exploits need to reach back to the Kali box in the lab. This means if I want to send an exploit from my local machine to the Vulnhub box, I need to send the reverse shell to the cloud Kali machine in order for it to work. The Vulnhub machines can NOT reach your local machine that is connected through the VPN.
 
 ## References
 
