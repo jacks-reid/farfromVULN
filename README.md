@@ -13,6 +13,8 @@ The script can be split into 3 different parts:
 ## Set-Up
 
 - Download the `awscli` package
+- Download Terraform and move the binary onto your system path ( https://www.terraform.io/downloads.html )
+- Run `terraform init` within the `farfromVULN` repository
 - Create a user within AWS with either administrator access or the access levels specified at https://docs.aws.amazon.com/vm-import/latest/userguide/vmie_prereqs.html#iam-permissions-image
 - `aws configure` to specify access keys and region
 - Subscribe to Kali Linux official AMI at https://aws.amazon.com/marketplace/pp/B01M26MMTT (free!)
