@@ -68,7 +68,7 @@ upload_image() {
 
     # Import image based on type of file it is
     # TODO: Add name tags, specify region
-    aws ec2 import-image --disk-containers Format=$FILE_TYPE,UserBucket="{S3Bucket=vmstorage,S3Key=$FILE_NAME}" --profile $IMG_UPLOAD_USER --region us-east-2 > import_ami_task.txt
+    aws ec2 import-image --description "$FILE_NAME" --disk-containers Format=$FILE_TYPE,UserBucket="{S3Bucket=vmstorage,S3Key=$FILE_NAME}" --profile $IMG_UPLOAD_USER --region us-east-2 > import_ami_task.txt
 
     AMI_TASK_ID=$(grep import import_ami_task.txt | cut -d'"' -f 4)
     echo "AMI_TASK_ID ID of the uploaded image: $AMI_TASK_ID"        
@@ -177,7 +177,11 @@ deploy() {
 
     COUNTER=$((COUNTER+1))
     echo "($COUNTER) Import remote Vulnhub image from AWS S3 bucket"
-    echo "$COUNTER.S3" >> machine_choices.txt    
+    echo "$COUNTER.S3" >> machine_choices.txt
+
+    COUNTER=$((COUNTER+1))
+    echo "($COUNTER) Use previously uploaded AMI from AWS"
+    echo "$COUNTER.AMI" >> machine_choices.txt        
 
     # Default color and font
     echo -e "${NORMAL}${NC}"
@@ -203,6 +207,7 @@ deploy() {
 		read IMPORT_FILE </dev/tty
 		IMPORT_NAME=$(echo $IMPORT_FILE | cut -d'.' -f 1)	    
 		IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)
+		set_aws_profiles
 		upload_image $IMPORT_FILE $IMPORT_FILE_TYPE $IMPORT_NAME 0
 	    elif [[ $SELECTED_MACHINE =~ "S3" ]]
 	    then
@@ -214,7 +219,47 @@ deploy() {
 		read IMPORT_FILE </dev/tty
 		IMPORT_NAME=$(echo $IMPORT_FILE | cut -d'.' -f 1)	    
 		IMPORT_FILE_TYPE=$(echo $IMPORT_FILE | cut -d'.' -f 2)		
-		upload_image $IMPORT_FILE $IMPORT_FILE_TYPE $IMPORT_NAME 1		
+		upload_image $IMPORT_FILE $IMPORT_FILE_TYPE $IMPORT_NAME 1
+	    # TODO: Improve JSON parsing
+	    elif [[ $SELECTED_MACHINE =~ "AMI" ]]
+	    then
+		set_aws_profiles
+		# List out available AMI's
+		echo "Listing available AMI's from your profile...."
+		aws ec2 describe-images --profile $IMG_UPLOAD_USER --region us-east-2 --owners self | grep "Tags" -A 5 | grep Value | cut -d"\"" -f 4
+
+		# Get AMI to use
+		echo "What AMI do you want to import?"
+		echo -n "> "
+		read AMI_CHOICE </dev/tty		
+		AMI_CHOICE_IMAGEID=$(aws ec2 describe-images --profile $IMG_UPLOAD_USER --region us-east-2 --owners self | grep "$AMI_CHOICE" -B32 | grep ImageId | cut -d"\"" -f 4)
+
+		FINAL_PATH="./vulnerable_machines/$AMI_CHOICE.tf"
+		echo -n """
+# A Vulnhub machine on the network
+resource \"aws_instance\" \"$AMI_CHOICE\" {
+  ami                    = \"$AMI_CHOICE_IMAGEID\" # Custom AMI, uploaded using https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
+  instance_type          = var.instance_type
+  key_name               = \"primary\"
+  subnet_id              = aws_subnet.my_subnet.id
+  vpc_security_group_ids = [aws_security_group.allow_vuln.id]
+
+  tags = {
+    Name = \"$AMI_CHOICE\"
+  }
+}
+# Don't change the name of the output, will break Webapp :)
+output \"$AMI_CHOICE\" {
+  value = aws_instance.$AMI_CHOICE.private_ip
+}
+
+""" > $FINAL_PATH
+
+		# Copy to main directory to be part of Terraform deploy
+		cp $FINAL_PATH .
+
+		echo "Ready to deploy AMI $AMI_CHOICE!"
+		
 	    # If the user chose to search, then begin search functionality
 	    elif [[ $SELECTED_MACHINE =~ "Search" ]]
 	    then
@@ -363,6 +408,7 @@ destroy() {
 	VULNS=$(find . | grep tf | grep -v -E 'vulnerable_machines|tfstate|main|vars|env|vpn|provider')
 	rm $VULNS
     fi
+    rm instance_ips.txt 2> /dev/null    
 } # destroy
 
 banner() {
