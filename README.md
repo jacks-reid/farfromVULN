@@ -46,3 +46,12 @@ Note that all reverse shell/call back exploits need to reach back to the Kali bo
 
 Set up billing alerts, learn about free tier limits, and save yourself from an unpleasant bill.
 
+## References
+
+Great resources used in this project:
+
+- https://github.com/3ndG4me/Offensive-Security-Engineering-Udemy
+- https://docs.amazonaws.cn/en_us/vm-import/latest/userguide/vm-import-ug.pdf
+- https://www.vulnhub.com/
+- https://www.kali.org/
+- https://medium.com/@mitesh_shamra/manage-aws-vpc-with-terraform-d477d0b5c9c5
