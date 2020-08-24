@@ -46,6 +46,10 @@ Note that all reverse shell/call back exploits need to reach back to the Kali bo
 
 Set up billing alerts, learn about free tier limits, and save yourself from an unpleasant bill.
 
+## Working boxes
+
+`farfromVULN` has some limitations, notably that AWS only supports specific operating systems. A list of tested Vulnhub boxes can be found at `working_machines.txt`.
+
 ## References
 
 Great resources used in this project:
