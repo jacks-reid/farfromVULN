@@ -1,0 +1,20 @@
+## Vulnhub boxes that do work with farfromVULN
+Fristileaks: 1.3      	      https://www.vulnhub.com/entry/fristileaks-13,133/
+Mr-Robot: 1		      https://www.vulnhub.com/entry/mr-robot-1,151/
+Stapler: 1		      https://www.vulnhub.com/entry/stapler-1,150/
+Simple: 1		      https://www.vulnhub.com/entry/so-simple-1,515/
+Raven: 2		      https://www.vulnhub.com/entry/raven-2,269/
+sick0s: 1.2		      https://www.vulnhub.com/entry/sickos-12,144/
+Lord of the Root: 1.0.1	      https://www.vulnhub.com/entry/lord-of-the-root-101,129/
+djinn: 1		      https://www.vulnhub.com/entry/djinn-1,397/
+
+
+## Vulnhub boxes that need further testing
+Breach: 1  	      	      https://www.vulnhub.com/entry/breach-1,152/
+
+
+## Vulnhub boxes that do not currently work with farfromVULN
+hackme: 1  	      	      https://www.vulnhub.com/entry/hackme-1,330/
+Sar: 1			      https://www.vulnhub.com/entry/sar-1,425/
+RickdiculouslyEasy: 1	      https://www.vulnhub.com/entry/rickdiculouslyeasy-1,207/
+
