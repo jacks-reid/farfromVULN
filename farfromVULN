@@ -345,7 +345,7 @@ provider \"aws\" {
 
 	# Start the web app! Hosted on port 7894
 	echo "Now starting web application..."
-	ssh -o StrictHostKeyChecking=no -i "$SSH_PRIV_KEY_PATH" ubuntu@$VPN_PUB_IP "openssl req -x509 -newkey rsa:4096 -nodes -out farfromVULN.pem -keyout farfromVULN.key -days 365 -subj \"/C=US/ST=/L=/O=farfromVULN/CN=farfromVULN\" && export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894 --cert=farfromVULN.pem --key farfromVULN.key"
+	ssh -o StrictHostKeyChecking=no -i "$SSH_PRIV_KEY_PATH" ubuntu@$VPN_PUB_IP "openssl req -x509 -newkey rsa:4096 -nodes -out farfromVULN.pem -keyout farfromVULN.key -days 365 -subj \"/C=US/ST=CA/L=US/O=farfromVULN/CN=farfromVULN\" && export FLASK_APP=/home/ubuntu/app.py && python3 -m flask run -h 0.0.0.0 -p 7894 --cert=farfromVULN.pem --key farfromVULN.key"
     else
 	clean_up
 	echo "Terraform deployment failed. Now exiting..."

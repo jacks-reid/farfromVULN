@@ -165,17 +165,19 @@ resource "aws_instance" "primary_vpn" {
       "echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections",
       "echo y | sudo apt install iptables-persistent",
       "sudo ./install.sh --unattended /tmp/pivpn_openvpn.conf",
-      "echo y | sudo apt install python3-flask",
       "export FLASK_APP=/home/ubuntu/app.py",
-      "echo y | sudo apt install python3-flask",
+      "curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py",
+      "sudo apt install -y python3-pip",
+      "pip3 install flask",
       "mv templates index_template.html",
       "mkdir templates",
       "mv index_template.html templates/",
       "mkdir images",
       "mv kali_linux_logo.png images/",
       "mv pivpn_logo.png images/",
-      "mv vulnhub_logo.png images/",      
-      "export FLASK_APP=/home/ubuntu/app.py && flask run -h 0.0.0.0 -p 7894 &"]
+      "mv vulnhub_logo.png images/"
+    ]
+
     connection {
       type        = "ssh"
       user        = "ubuntu"
