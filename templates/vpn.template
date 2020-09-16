@@ -1,20 +1,12 @@
-# # Configure the AWS Provider
-# # From https://raw.githubusercontent.com/3ndG4me/Offensive-Security-Engineering-Udemy/master/base-vpn/vpn.tf
-# data "aws_ami" "ubuntu" {
-#   most_recent = "true"
-
-#   filter {
-#     name   = "name"
-#     values = ["ubuntu/images/hvm-ssd/ubuntu-bionic-18.04-amd64-server-*"]
-#   }
-
-#   filter {
-#     name   = "virtualization-type"
-#     values = ["hvm"]
-#   }
-
-#   owners = ["099720109477"]
-# }
+# From https://raw.githubusercontent.com/3ndG4me/Offensive-Security-Engineering-Udemy/master/base-vpn/vpn.tf
+data "aws_ami" "ubuntu" {
+  most_recent = "true"
+  filter {
+    name   = "name"
+    values = ["ffv-ubuntu*"]
+  }
+  owners = ["self"]
+}
 
 
 # Put your IP here to whitelist it for ssh
@@ -72,121 +64,11 @@ resource "aws_security_group" "vpn_group" {
 
 
 resource "aws_instance" "primary_vpn" {
-  ami             = "ami-0223c8f6f61e0553b"
+  ami             = data.aws_ami.ubuntu.id
   instance_type   = var.instance_type
   subnet_id              = aws_subnet.my_subnet.id  
   vpc_security_group_ids = [aws_security_group.vpn_group.id]
   key_name        = "{{ cloud_name }}"
-
-  # provisioner "file" {
-  #   source      = "../pivpn/pivpn_openvpn.conf"
-  #   destination = "/tmp/pivpn_openvpn.conf"
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "ubuntu"
-  #     private_key = file(var.private_key_path) # CHANGE ME
-  #     host        = self.public_ip
-  #   }
-  # }
-
-  # provisioner "file" {
-  #   source      = "../flask/application.py"
-  #   destination = "/home/ubuntu/application.py"
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "ubuntu"
-  #     private_key = file(var.private_key_path) # CHANGE ME
-  #     host        = self.public_ip
-  #   }
-  # }
-
-  # provisioner "file" {
-  #   source      = "../flask/templates/index_template.html"
-  #   destination = "/home/ubuntu/templates/index_template.html"
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "ubuntu"
-  #     private_key = file(var.private_key_path) # CHANGE ME
-  #     host        = self.public_ip
-  #   }
-  # }
-
-  # provisioner "file" {
-  #   source      = "../flask/faq.html"
-  #   destination = "/home/ubuntu/faq.html"
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "ubuntu"
-  #     private_key = file(var.private_key_path) # CHANGE ME
-  #     host        = self.public_ip
-  #   }
-  # }
-
-  # provisioner "file" {
-  #   source      = "../flask/images/kali_linux_logo.png"
-  #   destination = "/home/ubuntu/kali_linux_logo.png"
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "ubuntu"
-  #     private_key = file(var.private_key_path) # CHANGE ME
-  #     host        = self.public_ip
-  #   }
-  # }
-
-  # provisioner "file" {
-  #   source      = "../flask/images/pivpn_logo.png"
-  #   destination = "/home/ubuntu/pivpn_logo.png"
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "ubuntu"
-  #     private_key = file(var.private_key_path) # CHANGE ME
-  #     host        = self.public_ip
-  #   }
-  # }
-
-  # provisioner "file" {
-  #   source      = "../flask/images/vulnhub_logo.png"
-  #   destination = "/home/ubuntu/vulnhub_logo.png"
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "ubuntu"
-  #     private_key = file(var.private_key_path) # CHANGE ME
-  #     host        = self.public_ip
-  #   }
-  # }    
-
-  # # Run the setup script
-  # provisioner "remote-exec" {
-  #   inline = ["curl -L https://install.pivpn.io > install.sh",
-  #     "chmod +x install.sh",
-  #     "sudo apt update", # patchwork for issue https://github.com/hashicorp/terraform/issues/1025
-  #     "sudo apt update",
-  #     "echo iptables-persistent iptables-persistent/autosave_v4 boolean true | sudo debconf-set-selections",
-  #     "echo iptables-persistent iptables-persistent/autosave_v6 boolean true | sudo debconf-set-selections",
-  #     "echo y | sudo apt install iptables-persistent",
-  #     "sudo apt install -y libssl-dev",
-  #     "sudo ./install.sh --unattended /tmp/pivpn_openvpn.conf",
-  #     "export FLASK_APP=/home/ubuntu/app.py",
-  #     "curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py",
-  #     "sudo apt install -y python3-pip",
-  #     "pip3 install flask",
-  #     "pip3 install uwsgi",
-  #     "mv templates index_template.html",
-  #     "mkdir templates",
-  #     "mv index_template.html templates/",
-  #     "mkdir images",
-  #     "mv kali_linux_logo.png images/",
-  #     "mv pivpn_logo.png images/",
-  #     "mv vulnhub_logo.png images/"
-  #   ]
-
-  #   connection {
-  #     type        = "ssh"
-  #     user        = "ubuntu"
-  #     private_key = file(var.private_key_path) # CHANGE ME
-  #     host        = self.public_ip
-  #   }
-  # }
   
   tags = {
     Name = "Primary vpn"
