@@ -115,13 +115,6 @@ def deploy(terraform, cloud_name):
         mylist = []
         found_flag = False
         counter = 1
-        # for box in vulns:
-        #     name = box.split('.template')[0]
-        #     print('%s. %s' % (counter, name))
-        #     mylist.append((counter,box))        
-        #     counter += 1
-
-        # logging.debug(mylist)
 
         # List of additional options outside of available machines
         additional_options = ['Import local machine image to AWS S3 bucket',
@@ -158,7 +151,7 @@ def deploy(terraform, cloud_name):
 
         # Execute option
         if 'local' in user_input:
-            import_local_vulnhub()
+            import_local_vulnhub(session)
         elif 'Build' in user_input:
             import_s3_vulnhub(cloud_name, session)
         elif 'previously' in user_input:
@@ -172,11 +165,14 @@ def deploy(terraform, cloud_name):
         else:
             import_vuln_template(terraform, cloud_name, user_input)
 
+# function that sets the private and public key to be used
+# for Terraform deployment
 def set_labs_keys():
-    # TODO: error handling for non-existent keys
+    # if environment variable is available, use that value
     env_priv_key = os.environ.get('FFV_PRIV_KEY')
     env_pub_key = os.environ.get('FFV_PUB_KEY')
 
+    # otherwise get the path from the user
     if env_priv_key is None:
         print('What is the path to the private key to use with this labs?')
         priv_key = input('> ')
@@ -189,7 +185,6 @@ def set_labs_keys():
     else:
         pub_key = env_pub_key
         
-
     return priv_key, pub_key
     
 # this function uses Terraform apply as well as starts the
@@ -274,8 +269,6 @@ def broad_render_template(cloud_name, template_file, vars_dictionary):
 def view_terraform_files(cloud_name):
     # List available deploy options
     vulns = os.listdir(cloud_name)
-    # TODO: remove me?
-    # vulns.remove('.terraform')
 
     # theatrics
     print()
@@ -322,10 +315,47 @@ def import_vuln_template(terraform, cloud_name, choice):
     with open('./' + cloud_name + '/' + tf_file_name, 'w') as f:
         f.write(output)
         f.close()
-    
-def import_local_vulnhub():
-    logging.debug('Importing local image from vulnhub')
 
+# function that takes images from vulnerable_images and
+# uploads them to the vmstorage bucket in AWS S3
+def import_local_vulnhub(session):
+    logging.debug('Importing local image from vulnerable_images')
+
+    # list available images in vulnerable_images
+    files = os.listdir('vulnerable_images')
+    files.remove('.gitignore')
+
+    local_dict = {}
+    counter = 1
+    for file in files:
+        file_ext = os.path.splitext(file)[1]
+        if file_ext == '.ova' or file_ext == '.vmdk':
+            print('%s. %s' % (counter, file))
+            local_dict.update({counter:file})
+            counter += 1
+            
+
+    # get the user choice
+    flag = False
+    while flag is False:
+        try:
+            print('Which image would you like to upload to the AWS S3 vmstorage bucket?')
+            user_input = int(input('> '))
+            image_to_upload = local_dict.get(user_input)
+            flag = True
+
+        except Exception as e:
+            print(e)
+            print('Please choose a number')
+
+    # upload the image to the vmstorage bucket
+    # get an S3 client from the session
+    print('Now uploading. This may take a while...')
+    s3_client = session.client('s3')
+    s3_client.upload_file('./vulnerable_images/' + image_to_upload, 'vmstorage', image_to_upload)
+
+    print('Uploaded %s to the vmstorage S3 bucket!' % image_to_upload)
+    
 def upload_image(cloud_name, session, image_name, image_name_no_ext, image_filetype):
     # Import the image
     logging.debug('Now attempt to import image')
@@ -409,11 +439,9 @@ def import_s3_vulnhub(cloud_name, session):
     logging.debug('Importing image from S3')
     
     # session creation and set up
-    # profile = set_aws_profile()
-    # session = boto3.session.Session(profile_name=profile)
     s3_client = session.client('s3')
 
-    # list available s3 buckets
+    # listv available s3 buckets
     response_dict = s3_client.list_objects(Bucket='vmstorage')
 
     # list each image file in the vmstorage bucket
@@ -453,6 +481,7 @@ def get_ec2_client():
     ec2_client = session.client('ec2')
 
     return ec2_client
+
 # function to import AMI images that are already uploaded
 def import_ami_image(cloud_name, session):
     logging.debug('importing ami image')
@@ -503,7 +532,7 @@ def import_ami_image(cloud_name, session):
     # render templates with value
     render_template(ami_name=image_name_no_ext, ami_id=ami_id, cloud_name=cloud_name)
 
-    
+    print('%s added to deployment!' % image_name_no_ext)
 
 # Function that takes in a terraform object and checks the status of the cloud
 def status(terraform):
