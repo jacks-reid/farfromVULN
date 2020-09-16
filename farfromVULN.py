@@ -98,14 +98,8 @@ def get_self_ami_dictionary(ec2_client):
 
     return amis_dict
 
-# TODO: Add loop over deploy options
+# function that handles the main deployment options
 def deploy(terraform, cloud_name):
-    # # List available deploy options
-    # vulns = os.listdir('templates')
-
-    # # remove unnecessary files
-    # vulns.remove('.gitignore')
-    # vulns.remove('base.template')
     # create a session to be used during deployment commands
     profile = set_aws_profile()
     session = boto3.session.Session(profile_name=profile)    
@@ -179,20 +173,28 @@ def deploy(terraform, cloud_name):
             import_vuln_template(terraform, cloud_name, user_input)
 
 def set_labs_keys():
-    # TODO: set environmental variables
     # TODO: error handling for non-existent keys
-    print('What is the path to the private key to use with this labs?')
-    priv_key = input('> ')
+    env_priv_key = os.environ.get('FFV_PRIV_KEY')
+    env_pub_key = os.environ.get('FFV_PUB_KEY')
 
-    print('What is the path to the public key to use with this labs?')
-    pub_key = input('> ')
+    if env_priv_key is None:
+        print('What is the path to the private key to use with this labs?')
+        priv_key = input('> ')
+    else:
+        priv_key = env_priv_key
+
+    if env_pub_key is None:
+        print('What is the path to the public key to use with this labs?')
+        pub_key = input('> ')
+    else:
+        pub_key = env_pub_key
+        
 
     return priv_key, pub_key
     
 # this function uses Terraform apply as well as starts the
 # Flask web app
 def deploy_terraform_files(cloud_name, terraform, session):
-    # TODO: render environment template
     # TODO: add region var to template
     env_dictionary = {'cloud_name' : cloud_name}
     broad_render_template(cloud_name, 'env.template', env_dictionary)
@@ -215,7 +217,6 @@ def deploy_terraform_files(cloud_name, terraform, session):
     broad_render_template(cloud_name, 'vpn.template', vpn_dictionary)
 
     # now apply!
-    # TODO: error checking on apply failure
     return_code, stdout, stderr = terraform.apply(capture_output=False, no_color=None)
 
     # check for error and exit if occurred
@@ -247,21 +248,6 @@ def deploy_terraform_files(cloud_name, terraform, session):
     scp_client = scp.SCPClient(ssh_client.get_transport())
     scp_client.put('instance_ips.txt', remote_path='/home/ubuntu/')
     scp_client.close()
-
-    # # TODO: run webapp in the background or leave the SSH connection open
-    # # run the Flask webapp
-    # flask_webapp_start_command = "openssl req -x509 -newkey rsa:4096 -nodes -out farfromVULN.pem -keyout farfromVULN.key -days 365 -subj \"/C=US/ST=CA/L=US/O=farfromVULN/CN=farfromVULN\" && uwsgi -w application:application --https 0.0.0.0:7894,farfromVULN.pem,farfromVULN.key"
-
-    # # get a background channel
-    # transport = ssh_client.get_transport()
-    # channel = transport.open_session()
-    # channel.exec_command(flask_webapp_start_command)
-    # stdin, stdout, stderr = ssh_client.exec_command(flask_webapp_start_command)
-    # print(stdin)
-    # print(stdout)
-    # print(stderr)
-
-    # ssh_client.close()
 
     # TODO: Provide better post-deployment messages
     print('Deployment complete!')
@@ -606,11 +592,18 @@ def set_terraform_directory(cloud_name, action):
     directory_exists = os.path.exists(cloud_name)
 
     if directory_exists is False and action == 'deploy':
-        os.mkdir(cloud_name)        
+        os.mkdir(cloud_name)
+        with open(cloud_name + '/provider.tf', 'w') as pf:
+            pf.write('provider "aws" { }')
+            pf.close()
 
     try:
         # Initialize directory
         return_code, stdout, stderr = t.cmd('init')
+        try:
+            os.remove(cloud_name + '/provider.tf')
+        except:
+            pass
     except FileNotFoundError:
         print('There is no cloud that was created with that name')
         print('Please deploy a cloud with that name before running this command again')
