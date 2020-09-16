@@ -1,6 +1,6 @@
 # farfromVULN
 
-`farfromVULN` is a tool to help quickly spin up an AWS private cloud with Vulnhub machines and a Kali box for pentesting training. `farfromVULN` helps eliminate the need for local hardware to host Vulnhub boxes on your home network. The script creates an environment where the Vulnhub boxes cannot access the Internet, only other machines within the virtual private cloud.
+`farfromVULN` is a tool to help quickly spin up an AWS private cloud with Vulnerable machines and a Kali box for pentesting training. `farfromVULN` helps eliminate the need for local hardware to host vulnerable boxes on your home network. The script creates an environment where the vulnerable boxes cannot access the Internet, only other machines within the virtual private cloud.
 
 ```
 farfromVULN
@@ -14,7 +14,7 @@ farfromVULN
 
 usage: farfromVULN.py [-h] action ...
 
-A tool to quickly spin up a virtual private cloud with Vulnhub machines for pentesting training
+A tool to quickly spin up a virtual private cloud with vulnerable machines for pentesting training
 
 optional arguments:
   -h, --help  show this help message and exit
@@ -66,10 +66,10 @@ DEPLOYMENT COMMANDS
   - The script will automatically detect when the upload process is completed
 - Download a VPN profile from `http://vpn_ip:7894/<vpn_profile_name>` where `vpn_profile_name` is any string you choose
   - Use `sudo openvpn vpn_profile_name.ovpn` to connect to the virtual private cloud network
-  - You will now be able to access the Kali Linux and Vulnhub machines through their private IP addresses
+  - You will now be able to access the Kali Linux and Vulnerable machines through their private IP addresses
 - When you are done, use `python farfromVULN.py destroy mycloudnamehere` to remove the lab environment
 
-Note that all reverse shell/call back exploits need to reach back to the Kali box in the lab. This means if I want to send an exploit from my local machine to the Vulnhub box, I need to send the reverse shell to the cloud Kali machine in order for it to work. The Vulnhub machines can NOT reach your local machine that is connected through the VPN.
+Note that all reverse shell/call back exploits need to reach back to the Kali box in the lab. This means if I want to send an exploit from my local machine to the Vulnerable box, I need to send the reverse shell to the cloud Kali machine in order for it to work. The Vulnerable machines can NOT reach your local machine that is connected through the VPN.
 
 ## Disclaimer
 
