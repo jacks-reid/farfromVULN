@@ -551,8 +551,8 @@ def destroy(terraform, cloud_name):
         user_input = input('(y/n) > ')        
         if user_input == 'y':
             return_code, stdout, stderr  = terraform.destroy(capture_output=False, no_color=None)
-            print(return_code)
-            shutil.rmtree(cloud_name)
+            if return_code == 0:
+                shutil.rmtree(cloud_name)
             flag = True
         
         elif user_input == 'n':
@@ -634,7 +634,8 @@ def set_terraform_directory(cloud_name, action):
         # Initialize directory
         return_code, stdout, stderr = t.cmd('init')
         try:
-            os.remove(cloud_name + '/provider.tf')
+            if action == 'deploy':
+                os.remove(cloud_name + '/provider.tf')
         except:
             pass
     except FileNotFoundError:
