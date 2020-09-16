@@ -511,23 +511,27 @@ def status(terraform):
     return_code, stdout, stderr = terraform.cmd('show')
     print(stdout)
 
-# TODO: Fix function to disinclude AMIs
+# Function that destroys clouds and their respective directories
 def destroy(terraform, cloud_name):
     logging.debug('Now entering destroy function')
-    print('What would you like to destroy?:')
-    print('1. The virtual private cloud')
-    print('2. The uploaded AMIs')
 
-    user_input = int(input('> '))
-
-    if user_input == 1:
-        return_code, stdout, stderr  = terraform.destroy(capture_output=False, no_color=None)
-        print(return_code)
-        shutil.rmtree(cloud_name)
+    # loop to get user input
+    flag = False
+    while flag is False:
+        print('Are you sure you want to delete the cloud: %s?' % cloud_name)
+        user_input = input('(y/n) > ')        
+        if user_input == 'y':
+            return_code, stdout, stderr  = terraform.destroy(capture_output=False, no_color=None)
+            print(return_code)
+            shutil.rmtree(cloud_name)
+            flag = True
         
-    else:
-        # TODO: better error handling
-        print('please choose a valid option')
+        elif user_input == 'n':
+            print('Destruction process cancelled.')
+            flag = True
+        
+        else:
+            print('Please choose a valid option')
 
 
 # Function that prints a banner and welcome text
