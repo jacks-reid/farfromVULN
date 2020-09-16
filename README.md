@@ -2,8 +2,6 @@
 
 `farfromVULN` is a tool to help quickly spin up an AWS private cloud with Vulnhub machines and a Kali box for pentesting training. `farfromVULN` helps eliminate the need for local hardware to host Vulnhub boxes on your home network. The script creates an environment where the Vulnhub boxes cannot access the Internet, only other machines within the virtual private cloud.
 
-## Using `farfromVULN`
-
 ```
 farfromVULN
   __            __                     _   _ _   _ _      _   _ 
@@ -78,6 +76,10 @@ Note that all reverse shell/call back exploits need to reach back to the Kali bo
 `farfromVULN` does its best to stay within AWS's free tier requirements. Throughout testing, I have never been charged more than $5 a month. Delete volumes you no longer need and monitor your costs carefully. Use the `farfromVULN.py ami` command to view and delete unused AMIs and their associated storage volumes.
 
 Set up billing alerts, learn about free tier limits, and save yourself from an unpleasant bill.
+
+## License
+
+This project is licensed under the terms of the GNU General Public License.
 
 ## Working boxes
 
