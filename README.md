@@ -1,6 +1,8 @@
 # farfromVULN
 
-image:https://img.shields.io/github/license/earnivore/farfromVULN?style=plastic
+<p>
+  <img src="https://img.shields.io/github/license/earnivore/farfromVULN?style=plastic">
+</p>
 
 `farfromVULN` is a tool to help quickly spin up an AWS private cloud with Vulnerable machines and a Kali box for pentesting training. `farfromVULN` helps eliminate the need for local hardware to host vulnerable boxes on your home network. The script creates an environment where the vulnerable boxes cannot access the Internet, only other machines within the virtual private cloud.
 
